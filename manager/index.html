@@ -67,7 +67,7 @@ const KEY='AIzaSyDXgdmAfP0lXRxt-vgZxMy1muNPqcCoucc', PROJECT='kora-w-bas', OWNER
 const DOCS=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 const AUTH='https://identitytoolkit.googleapis.com/v1/accounts';
 const MODES=['easy','medium','hard','mixed','daily'];
-const RW={ticket:'🎟️ Match ticket',fancard:'🪪 Fan card',ball:'⚽ Ball',fanshirt:'👕 Fan shirt',boots:'👟 Boots',official:'🏆 Official shirt'};
+const RW={ticket:'🎟️ Match ticket',fancard:'🪪 Fan card',ball:'⚽ Ball',fanshirt:'👕 Fan shirt',boots:'👟 Boots',official:'🏆 Official shirt',boots_training:'👟 Training boots',boots_pro:'👟 Pro boots',shirt_training:'👕 Training T-shirt',ball_mini:'⚽ Mini ball',ball_match:'⚽ Official match ball',keychain:'🔑 Keychain',bottle:'🥤 Water bottle',scarf:'🧣 Fan scarf',cap:'🧢 Cap'};
 const $=s=>document.querySelector(s);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch{}}};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
