@@ -6,7 +6,7 @@
 
 ## What you can do
 
-- **Solo quiz:** more than 1,000 questions on the World Cup, AFCON, Egyptian and Arab football, Europe, Latin America, the Ballon d'Or, legends and the Laws of the Game. Easy questions are worth 10 points, medium 20 and hard 30. You get speed and streak bonuses, and each round ends with a ⚡ flash round.
+- **Solo quiz:** 2,000 questions on the World Cup, AFCON, Egyptian and Arab football, Europe, Latin America, the Ballon d'Or, legends and the Laws of the Game. Easy questions are worth 10 points, medium 20 and hard 30. You get speed and streak bonuses, and each round ends with a ⚡ flash round.
 - **XI:** a pitch with the starting eleven of a famous final (300 lineups, from World Cup, Champions League, Euro, Africa Cup and more, including Egypt). Each shirt shows its number; tap one and type the player's name.
 - **Daily quiz:** questions about the day's real matches. You type your answer, and it's checked against the real result online.
 - **Play with friends:** teams can share one phone, or friends can join an online room with a code.
