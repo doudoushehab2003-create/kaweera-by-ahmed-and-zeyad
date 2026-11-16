@@ -1,19 +1,38 @@
-# Kaweera (كويرة) · v1.0.2
+# ⚽ Kaweera (كويرة) · v1.0.2
 
 > **"انت والثلاث خشبات"** — The ultimate football trivia, live scores, and prediction platform.
 
+[![Live Web App](https://img.shields.io/badge/play%20online-doudoushehab2003--create.github.io%2Fkaweera--by--sheebo-2bff88.svg?style=for-the-badge&logo=google-chrome&logoColor=black)](https://doudoushehab2003-create.github.io/kaweera-by-sheebo/)
 [![Version](https://img.shields.io/badge/version-1.0.2-brightgreen.svg)](https://github.com/doudoushehab2003-create/kaweera-by-ahmed-and-zeyad)
 [![Runtime](https://img.shields.io/badge/runtime-Node.js%20%7C%20Expo%20Web-blue.svg)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/backend-Google%20Cloud%20Firestore-orange.svg)](https://firebase.google.com/)
-[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](#)
+[![Languages](https://img.shields.io/badge/languages-English%20%7C%20العربية%20%7C%20Français-gold.svg)](#-multilingual--rtl-support)
+
+**Kaweera by Sheebo** is a cross-platform football trivia and match prediction application available in English, Arabic, and French. Play it directly in your browser:  
+👉 **[https://doudoushehab2003-create.github.io/kaweera-by-sheebo](https://doudoushehab2003-create.github.io/kaweera-by-sheebo/)**
+
+> *Note: This repository hosts the distribution and production web deployment of the Kaweera application.*
 
 ---
 
 ## 📌 Overview
 
-**Kaweera** (derived from the Arabic *كويرة*, meaning "little ball") is a cross-platform football trivia and live match prediction platform engineered with **React Native**, **Expo**, and **Google Cloud Firestore**. Designed specifically for passionate football fans, Kaweera transforms casual match nights into competitive tournaments—featuring solo speed challenges, pass-and-play team showdowns, room-based online multiplayer, real-time match predictions, and a virtual token economy convertible into physical football merchandise.
+**Kaweera** (derived from the Arabic *كويرة*, meaning "little ball") is engineered with **React Native**, **Expo (TypeScript)**, and **Google Cloud Firestore**. Designed specifically for passionate football fans, Kaweera transforms casual match nights into competitive tournaments—featuring solo speed challenges, pass-and-play team showdowns, room-based online multiplayer, real-time match predictions, and a virtual token economy convertible into physical football merchandise.
 
-Every aesthetic detail—from the stadium floodlight color palette (`#06210F`) to the tactile card interactions and the custom Arabic typography where the brand's letter *ة* integrates a football—is tailored to evoke the atmosphere of match day.
+Every aesthetic detail—from the stadium floodlight color palette (`#06210F`) to tactile card interactions and custom Arabic typography where the brand's letter *ة* incorporates a football—is tailored to evoke the electric atmosphere of match day.
+
+---
+
+## 🎮 How to Play
+
+1. Open the [web app](https://doudoushehab2003-create.github.io/kaweera-by-sheebo/) and press **Start**.
+2. Select your game mode:
+   - **Solo Quiz:** Pick a difficulty level (Easy, Medium, Hard, or Mixed) and answer before the timer expires. Each round consists of 20 questions.
+   - **Teams:** Share one phone with friends for pass-and-play local team competition.
+   - **Online Room:** Create or join a private multiplayer room with a 5-character room code.
+   - **Daily Quiz & Predictions:** Predict real-world match scorelines and answer daily football trivia.
+3. You start with **3 lives**. An incorrect answer or running out of time consumes one life.
+4. **Sign up / Sign in** to record your scores to the global leaderboard and accumulate **Kaweera Tokens** for real-world rewards.
 
 ---
 
@@ -21,44 +40,50 @@ Every aesthetic detail—from the stadium floodlight color palette (`#06210F`) t
 
 | Category | Technology | Description & Version |
 | :--- | :--- | :--- |
-| **Frontend Framework** | **React Native** & **React Native Web** | Core component model and responsive web runtime |
-| **Application Platform** | **Expo** (SDK 51+) / **Expo Router** | Static web export and universal cross-platform bridging |
-| **Language & Bundler** | **JavaScript (ES2023+)** / **Metro Bundler** | Module bundling and code generation (`index-*.js`) |
-| **Cloud Database** | **Google Cloud Firestore** (v1 REST API) | Document storage for leaderboards, wallets, rooms, and ads |
-| **Authentication** | **Google Identity Toolkit** (Firebase Auth REST) | Email/password auth, unique username validation, secure token refresh |
-| **Typography & Fonts** | `@expo-google-fonts/cairo`, `@expo-google-fonts/lalezar` | Bilingual typography: Cairo (400–900 weights) & Lalezar for Arabic; Bebas Neue for Latin display |
-| **Live Match API** | **ESPN Soccer Scoreboard API** | Real-time match data, live clock (`HT`, `MM'`), and match statistics |
-| **Local Persistence** | `@react-native-async-storage/async-storage` | Session tokens, offline prediction drafts, and client preferences |
-| **Styling & Effects** | React Native `StyleSheet`, Custom Theme Engine | Dark stadium aesthetic with neon and gold game accents |
-| **Payments Integration** | **InstaPay Egypt** & Manual Verification | Peer-to-peer mobile payments for token packs and sponsorship tiers |
+| **Frontend Framework** | **React Native** & **React Native Web** | Universal reactive component architecture across mobile & web |
+| **Application Platform** | **Expo** (SDK 51+) / **Expo Router** | Cross-platform runtime and static production web bundler |
+| **Language & Bundler** | **JavaScript (ES2023+) / TypeScript** & **Metro** | High-performance bundling and asset optimization (`_expo/static/js/web/`) |
+| **Cloud Database** | **Google Cloud Firestore** (v1 REST API) | Document store for leaderboards, user wallets, multiplayer rooms, and ads |
+| **Authentication** | **Google Identity Toolkit** (Firebase Auth REST) | Secure email/password authentication, unique username registry, token refresh |
+| **Typography & Fonts** | `@expo-google-fonts/cairo`, `@expo-google-fonts/lalezar` | Bilingual font stack: Cairo (400–900) & Lalezar for Arabic; Bebas Neue for Latin display |
+| **Live Match API** | **ESPN Soccer Scoreboard API** | Upstream real-time scores, clock status (`HT`, `FT`, live minutes), and schedules |
+| **Local Persistence** | `@react-native-async-storage/async-storage` | Local session token storage, offline prediction drafts, and preferences |
+| **Styling & Effects** | React Native `StyleSheet`, Custom Theme Engine | Dark stadium aesthetic (`#06210F`, `#C6FF3D`, `#FFD23F`, `#F4F8EF`) with animations |
+| **Admin & Management** | **Kaweera Manager** (Vanilla HTML5/JS Dashboard) | Back-office dashboard for token payment approvals, reward fulfillment, and ad review |
+| **CI/CD & Security** | **GitHub Actions** (`codeql.yml`) & **SECURITY.md** | Automated CodeQL static analysis and vulnerability disclosure framework |
 
 ---
 
 ## ✨ Key Features & Game Modes
 
 ### 1. ⚽ Solo Trivia Mode
-- **Adaptive Difficulty:** Choose between **Easy** (10 pts), **Medium** (20 pts), **Hard** (30 pts), or **Mixed** (all levels).
-- **20-Question Rounds:** Each round consists of 20 randomized questions with auto-advancing transitions.
+- **Adaptive Difficulty:** Choose between **Easy** (10 pts), **Medium** (20 pts), **Hard** (30 pts), or **Mixed** (all difficulties).
+- **20-Question Rounds:** Each round serves 20 questions with seamless auto-advancing answer transitions.
 - **Dynamic Scoring Engine:**
   - **Base Points:** 10 (Easy), 20 (Medium), 30 (Hard).
-  - **Speed Bonus:** Answer quickly to claim up to **+50%** of the question's base value:
+  - **Speed Bonus:** Earn up to **+50%** of the question's base value by answering rapidly:
     $$\text{Bonus} = \text{round}\left(0.5 \times \text{Base} \times \frac{\text{Time Left}}{\text{Time Limit}}\right)$$
-  - **Streak Multiplier:** Consecutive correct answers award $+5$ pts per streak tier (up to $+25$ pts maximum).
-  - **3 Lives System:** Incorrect answers or time-outs consume a life.
-- **⚡ Flash Round:** Finish the round with a high-intensity 5-question speed trial (5 seconds per question, flat 10 pts each).
+  - **Streak Multiplier:** Consecutive correct answers award $+5$ pts per tier (up to $+25$ pts maximum).
+  - **3 Lives System:** Missing an answer or exceeding time deducts one life.
+- **⚡ Flash Round:** Finish each round with an adrenaline-fueled 5-question speed trial (5 seconds per question, flat 10 pts each).
 
-### 2. 👥 Pass & Play Team Mode ("Teams")
-- Local multiplayer played on a single device for watch parties and gatherings.
+### 2. 📅 Daily Match Quiz ("Daily")
+- Fresh trivia generated from recent real-world match outcomes and football events.
+- Answers are verified against live match records online.
+- Features dedicated daily streak tracking and a dedicated daily leaderboard.
+
+### 3. 👥 Pass & Play Team Mode ("Teams")
+- Designed for match nights with friends using a single smartphone or tablet.
 - Supports unlimited custom teams.
-- Configurable match lengths: **5, 10, or 25 rounds**.
-- Turn-based team question selection, live scoreboard, and team flash rounds.
+- Configurable match duration: **5, 10, or 25 rounds**.
+- Turn-based team question selection, live team scoreboard, and team flash rounds.
 
-### 3. 🌐 Online Multiplayer Rooms ("Online")
-- Create or join synchronized multiplayer rooms via 5-character alphanumeric room codes (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`).
-- Synchronized lobby with 10 questions per match.
-- Live player scoreboards, answer validation, and winner declaration stored in Firestore `rooms/`.
+### 4. 🌐 Online Multiplayer Rooms ("Online")
+- Create or join synchronized multiplayer rooms via 5-character alphanumeric codes (`ABCDEFGHJKLMNPQRSTUVWXYZ23456789`).
+- Synchronized lobby with 10 questions per match (`ROOM_QUESTIONS = 10`).
+- Real-time scoreboards, answer confirmations, and winner declaration stored in Firestore `rooms/`.
 
-### 4. 🔮 Real-Time Predictions League & Live Scores
+### 5. 🔮 Real-Time Predictions League & Live Scores
 - **Live Match Tracking:** Ingests live schedules and scores from the ESPN Soccer Scoreboard API across 5 key competition tiers:
   - **Africa:** AFCON, CAN Qualifiers, African Nations Championship, CAF Champions League, CAF Confederation Cup.
   - **Arab & Asian Football:** Saudi Pro League, Saudi King's Cup, Arabian Gulf Cup, AFC Champions League (Elite & Two), AFC Asian Cup.
@@ -68,19 +93,19 @@ Every aesthetic detail—from the stadium floodlight color palette (`#06210F`) t
 - **Prediction Scoring:**
   - **Exact Scoreline:** **5 points**
   - **Correct Match Outcome (Home / Draw / Away):** **2 points**
-- **Global Prediction Board:** Aggregated player prediction rankings in `predictionScores/`.
+- **Global Prediction Board:** Aggregated player rankings in `predictionScores/`.
 
-### 5. 🪙 Kaweera Tokens & Economy
-- Players earn virtual tokens on completed games (requires account and $\ge 1$ correct answer):
+### 6. 🪙 Kaweera Tokens & Economy
+- Players earn virtual tokens on completed games (requires an account and $\ge 1$ correct answer):
   - **Easy:** 5 tokens
   - **Medium:** 10 tokens
   - **Hard:** 15 tokens
   - **Mixed / Daily Quiz:** 10 tokens
 - **Valuation:** $200\text{ tokens} = 1\text{ EGP}$ (Egyptian Pound).
-- **Token Purchases:** Buy packs (e.g., 200 tokens for 10 EGP) via InstaPay (`ahmedsabdelgawad@instapay`) with screenshot verification.
+- **Token Purchases:** Buy packs (e.g., 200 tokens for 10 EGP) via InstaPay (`ahmedsabdelgawad@instapay`), verified via payment screenshot upload or confirmation email to `ahmedabdelgawad11803@gmail.com`.
 
-### 6. 🎁 Physical Rewards Shop
-Accumulated tokens can be redeemed for real-world football merchandise via the in-app shop:
+### 7. 🎁 Physical Rewards Shop
+Accumulated tokens can be swapped for real football gear via the in-app shop:
 - 🎟️ **Match Ticket:** 20,000 tokens (100 EGP)
 - 🪪 **Fan Card:** 44,000 tokens (220 EGP)
 - ⚽ **Football:** 60,000 tokens (300 EGP)
@@ -88,19 +113,26 @@ Accumulated tokens can be redeemed for real-world football merchandise via the i
 - 👟 **Football Boots:** 400,000 tokens (2,000 EGP)
 - 🏆 **Official Match Kit:** 600,000 tokens (3,000 EGP)
 
-*Redemption requests are logged in Firestore (`rewardRequests/`) for manual fulfillment and delivery.*
+*Redemption requests are recorded in Firestore (`rewardRequests/`) for manual verification and fulfillment.*
 
-### 7. 📢 Self-Serve Advertising Platform
+### 8. 📢 Self-Serve Advertising Platform
 - Local businesses and football brands can submit in-app banner advertisements.
-- Package tiers: **Weekly** or **Monthly** exposure.
-- Real-time preview card, URL integrity validation (`https://*`), and direct InstaPay reference submission.
-- Community safety: includes an ad reporting workflow (`adReports/`).
+- Package tiers: **Weekly** or **Monthly** duration with dynamic pricing from Firestore `config/payments`.
+- Live preview card, URL safety verification (`https://*`), and InstaPay payment reference tracking.
+- Community safety: includes an in-app ad reporting workflow (`adReports/`).
 
-### 8. 🌍 Multilingual & RTL Support
+### 9. 🛡️ Kaweera Manager (Admin Dashboard)
+Located at `/manager/`, the admin console enables the platform owner to:
+- Review incoming InstaPay token purchase requests, inspect payment screenshots, and credit player wallets with one click.
+- Process pending physical reward claims and update fulfillment statuses.
+- Inspect and moderate active advertisements and user reports.
+- Monitor player accounts and mode leaderboards.
+
+### 10. 🌍 Multilingual & RTL Support
 - Full internationalization across **English (`en`)**, **Arabic (`ar`)**, and **French (`fr`)**.
-- True right-to-left (RTL) layout switching and localized team name mappings (`arabicTeamName`).
+- Native right-to-left (RTL) layout switching and localized Arabic team name mappings (`arabicTeamName`).
 
-### 9. 📚 1,070+ Curated Question Bank
+### 11. 📚 1,070+ Curated Question Bank
 The database contains over **1,077 verified questions** categorized across 12 distinct football domains:
 - 🏆 FIFA World Cup & Expanded World Cup Archives
 - 🌍 Africa Cup of Nations (AFCON)
@@ -123,10 +155,16 @@ Kaweera/
 ├── README.md                              # Primary project documentation & architecture guide
 └── kaweera v1.0.2/                        # Application distribution & web deployment root
     ├── .git/                              # Git VCS metadata (remote: kaweera-by-ahmed-and-zeyad)
+    ├── .github/
+    │   └── workflows/
+    │       └── codeql.yml                 # Automated CodeQL security scanning workflow
     ├── .nojekyll                          # Bypass Jekyll processing for GitHub Pages hosting
+    ├── SECURITY.md                        # Security vulnerability reporting policy
     ├── index.html                         # HTML5 entry point with responsive styling reset
     ├── favicon.ico                        # Application favicon
     ├── metadata.json                      # Expo Metro bundler manifest
+    ├── manager/
+    │   └── index.html                     # Kaweera Manager back-office admin dashboard
     ├── _expo/
     │   └── static/
     │       └── js/
@@ -304,9 +342,9 @@ When running the project with custom backend services or developing from source,
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | **Yes** | Firebase project identifier | `kora-w-bas` |
 | `EXPO_PUBLIC_ESPN_SCOREBOARD_URL` | Optional | Upstream ESPN Soccer Scoreboard API endpoint | `https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard` |
 | `EXPO_PUBLIC_INSTAPAY_ADDRESS` | Optional | InstaPay recipient handle for payments | `ahmedsabdelgawad@instapay` |
-| `EXPO_PUBLIC_SUPPORT_EMAIL` | Optional | Support & payment verification contact email | `ahmabdelgawad11803@gmail.com` |
+| `EXPO_PUBLIC_SUPPORT_EMAIL` | Optional | Support & payment verification contact email | `ahmedabdelgawad11803@gmail.com` |
 
-> ⚠️ **Security Notice:** Do not commit private production credentials, master service account keys, or unauthorized secrets to version control. Public client API keys are scoped with Firestore security rules.
+> ⚠️ **Security Notice:** Do not commit private production credentials, master service account keys, or unauthorized secrets to version control. Public client API keys are secured with Firestore security rules.
 
 ---
 
@@ -367,6 +405,7 @@ Examples:
 
 ## 📄 Authors & Acknowledgments
 
-- **Lead Architect & Developer:** **Ahmed Abdelgawad**
+- **Lead Architect & Developer:** **Ahmed Abdelgawad (Sheebo)**
 - **Co-Developer:** **Zeyad El Barougy**
+- **Contact / Support & Rewards Fulfillment:** `ahmedabdelgawad11803@gmail.com`
 - **Design & Concept:** Designed and developed for the Egyptian and Arab football enthusiast community.
