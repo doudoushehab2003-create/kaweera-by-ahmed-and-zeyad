@@ -29,7 +29,7 @@
     "@expo-google-fonts/cairo": "^0.2.3",
     "@expo-google-fonts/lalezar": "^0.2.3",
     "@expo-google-fonts/bebas-neue": "^0.2.3",
-    "uuid": "^9.0.0"
+    "uuid": "^14.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
