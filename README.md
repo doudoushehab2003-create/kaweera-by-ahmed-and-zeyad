@@ -11,7 +11,7 @@
 - **Play with friends:** teams can share one phone, or friends can join an online room with a code.
 - **Live scores:** today's, yesterday's and tomorrow's matches from the competitions you pick.
 - **Leaderboards:** for every level and the daily quiz.
-- **Tokens and rewards:** you earn tokens for every finished game. You can also buy 100 tokens for 10 EGP with InstaPay. Tokens can be swapped for real football rewards such as tickets, balls, shirts and boots.
+- **Tokens and rewards:** you earn tokens for every finished game. You can also buy tokens with InstaPay: pick a pack or any amount from 10 to 5,000 EGP, at 10 tokens per EGP. Tokens can be swapped for real football rewards such as tickets, balls, shirts and boots.
 - **Your account:** sign up with an email, so your scores and tokens follow you.
 
 ## How to play
