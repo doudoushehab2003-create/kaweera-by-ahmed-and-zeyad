@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Kaweera Manager</title>
+<style>
+:root{--bg:#06150c;--card:#0d2616;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--ink:#04200f}
+@media (prefers-color-scheme:light){:root{--bg:#eef5ee;--card:#fff;--line:#cfe0d3;--fg:#10281a;--mut:#58705f;--neon:#0a9d4c;--gold:#b87d00;--red:#d32f2f;--ink:#fff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif;padding:20px max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
+h1{margin:0 0 4px;font-size:26px}h1 span{color:var(--neon)}.sub{color:var(--mut);margin:0 0 16px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:7px 14px}
+button.on,button.go{background:var(--neon);color:var(--ink);border-color:var(--neon);font-weight:700}
+button.del{color:var(--red);border-color:var(--red)}button.sm{padding:3px 10px;font-size:13px}button:disabled{opacity:.5;cursor:default}
+.badge{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;margin-left:4px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.stat b{display:block;font-size:28px;color:var(--gold)}.stat small{color:var(--mut)}
+input,select{font:inherit;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0}
+.bar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;min-width:680px}th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-bottom:0}td.act{display:flex;gap:6px}
+.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid}.pending{color:var(--gold)}.approved{color:var(--neon)}.rejected,.ended{color:var(--red)}
+.thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--line)}
+#msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--neon);padding:9px 18px;border-radius:12px;display:none;z-index:9}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:8;padding:16px}#zoom img{max-width:100%;max-height:100%;border-radius:10px}
+.empty{padding:22px;color:var(--mut);text-align:center}
+.login{max-width:420px;margin:40px auto;display:flex;flex-direction:column;gap:12px}
+</style></head><body>
+<h1>كويرة <span>Kaweera Manager</span></h1>
+<p class="sub" id="who"></p>
+
+<section id="login" class="login" hidden>
+  <p>Sign in with the owner email. We send a sign-in link to your inbox.</p>
+  <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
+  <button class="go" id="send">Email me a sign-in link</button>
+  <p class="sub" id="loginmsg"></p>
+</section>
+
+<main id="app" hidden>
+  <div class="stats" id="stats"></div>
+  <div class="tabs">
+    <button data-t="buys" class="on">🪙 Payments <span class="badge" id="nb" hidden></span></button>
+    <button data-t="rewards">🎁 Rewards <span class="badge" id="nr" hidden></span></button>
+    <button data-t="players">Players</button>
+    <button data-t="boards">Leaderboards</button>
+    <button data-t="ads">📣 Ads</button>
+    <button data-t="pay">💳 InstaPay</button>
+    <button id="out" style="margin-left:auto">Sign out</button>
+  </div>
+  <section id="buys"><p class="sub">New payment requests appear here by themselves. Check the screenshot and your InstaPay, then approve to add the tokens.</p><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Screenshot</th><th>Reference</th><th>Paid</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="bb"></tbody></table></div></section>
+  <section id="rewards" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Email</th><th>Reward</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="rb"></tbody></table></div></section>
+  <section id="players" hidden><div class="bar"><input id="q" placeholder="Search by name or email"></div><div class="wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Tokens</th><th>Games</th><th></th></tr></thead><tbody id="ub"></tbody></table></div></section>
+  <section id="boards" hidden><div class="bar"><select id="mode"><option>mixed</option><option>easy</option><option>medium</option><option>hard</option><option>daily</option></select></div><div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Correct</th><th>When</th><th></th></tr></thead><tbody id="sb"></tbody></table></div></section>
+  <section id="ads" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Business</th><th>Text</th><th>Package</th><th>Reference</th><th>Contact</th><th>Status</th><th></th></tr></thead><tbody id="ab"></tbody></table></div></section>
+  <section id="pay" hidden><div class="stat" style="display:flex;flex-direction:column;gap:10px;max-width:520px">
+    <label>InstaPay address or link<br><input id="ipa" style="width:100%"></label>
+    <label>Ad price, 1 week (EGP)<br><input id="wp" type="number" min="1"></label>
+    <label>Ad price, 1 month (EGP)<br><input id="mp" type="number" min="1"></label>
+    <button class="go" id="savepay">Save</button></div></section>
+</main>
+<div id="msg"></div><div id="zoom"><img alt="Payment screenshot"></div>
+
+<script>
+const KEY='AIzaSyDXgdmAfP0lXRxt-vgZxMy1muNPqcCoucc', PROJECT='kora-w-bas', OWNER='ahmedabdelgawad11803@gmail.com';
+const DOCS=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
+const AUTH='https://identitytoolkit.googleapis.com/v1/accounts';
+const MODES=['easy','medium','hard','mixed','daily'];
+const RW={ticket:'🎟️ Match ticket',fancard:'🪪 Fan card',ball:'⚽ Ball',fanshirt:'👕 Fan shirt',boots:'👟 Boots',official:'🏆 Official shirt'};
+const $=s=>document.querySelector(s);
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'-';
+const msg=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.display='none',3000)};
+const pill=s=>`<span class="pill ${s}">${s}</span>`;
+
+// ---------- sign-in with an email link ----------
+let session=store.get('kwSession');
+async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j}
+async function token(){
+  if(!session)throw new Error('signed-out');
+  if(Date.now()<session.exp-60000)return session.idToken;
+  const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(session.refreshToken)});
+  const j=await r.json();if(!r.ok){signOut();throw new Error('signed-out')}
+  session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+j.expires_in*1000};store.set('kwSession',session);return session.idToken;
+}
+function signOut(){session=null;store.set('kwSession',null);show()}
+$('#send').onclick=async()=>{const email=$('#email').value.trim().toLowerCase();if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
+  $('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email,continueUrl:location.origin+location.pathname});store.set('kwEmail',email);$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
+async function finishLink(){
+  const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
+  const email=store.get('kwEmail')||OWNER;
+  try{const j=await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email,oobCode:p.get('oobCode')});session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)}
+  catch(e){$('#loginmsg').textContent='That link expired or was already used. Ask for a new one.'}
+  history.replaceState(null,'',location.pathname);
+}
+$('#out').onclick=signOut;
+
+// ---------- Firestore ----------
+const enc=v=>typeof v==='string'?{stringValue:v}:Number.isInteger(v)?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{doubleValue:v};
+const dec=v=>v.stringValue??(v.integerValue!==undefined?Number(v.integerValue):v.doubleValue??v.booleanValue??(v.mapValue?decF(v.mapValue.fields):v.arrayValue?(v.arrayValue.values||[]).map(dec):null));
+const decF=(f={})=>Object.fromEntries(Object.entries(f).map(([k,v])=>[k,dec(v)]));
+async function fs(path,init={}){const r=await fetch(`${DOCS}/${path}`,{...init,headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'}});const j=await r.json().catch(()=>({}));if(r.status===404&&init.method==null)return null;if(!r.ok)throw new Error(j.error?.message||r.status);return j}
+async function list(col){const out=[];let pt='';do{const j=await fs(`${col}?pageSize=300${pt?'&pageToken='+pt:''}`);for(const d of j?.documents||[])out.push({id:d.name.split('/').pop(),...decF(d.fields)});pt=j?.nextPageToken||''}while(pt);return out}
+async function get(path){const d=await fs(path);return d?{id:d.name.split('/').pop(),...decF(d.fields)}:null}
+const patch=(path,data)=>fs(`${path}?${Object.keys(data).map(k=>'updateMask.fieldPaths='+k).join('&')}`,{method:'PATCH',body:JSON.stringify({fields:Object.fromEntries(Object.entries(data).map(([k,v])=>[k,enc(v)]))})});
+const create=(col,id,data)=>fs(`${col}?documentId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({fields:Object.fromEntries(Object.entries(data).map(([k,v])=>[k,enc(v)]))})});
+const del=path=>fs(path,{method:'DELETE'});
+
+// ---------- data + views ----------
+let D={users:[],wallets:[],buys:[],rewards:[],tab:'buys'};
+const emailOf=uid=>D.users.find(u=>u.id===uid)?.email??'';
+async function load(){
+  const [users,wallets,buys,rewards]=await Promise.all([list('users'),list('wallets'),list('tokenPurchases'),list('rewardRequests')]);
+  const order=x=>x.status==='pending'?0:1;
+  Object.assign(D,{users,wallets,buys:buys.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt),rewards:rewards.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt)});
+  const nb=buys.filter(b=>b.status==='pending').length,nr=rewards.filter(r=>r.status==='pending').length;
+  $('#nb').hidden=!nb;$('#nb').textContent=nb;$('#nr').hidden=!nr;$('#nr').textContent=nr;
+  document.title=(nb+nr?`(${nb+nr}) `:'')+'Kaweera Manager';
+  const tokens=wallets.reduce((s,w)=>s+(w.tokens||0),0),egp=buys.filter(b=>b.status==='approved').reduce((s,b)=>s+(b.egp||0),0);
+  $('#stats').innerHTML=[['Players',users.length],['Payments waiting',nb],['Reward requests waiting',nr],['Tokens held by players',tokens.toLocaleString()],['EGP from tokens',egp]].map(([k,v])=>`<div class="stat"><b>${v}</b><small>${k}</small></div>`).join('');
+  render();
+}
+const proofs={};
+async function loadProof(id){if(id in proofs)return;proofs[id]='';const p=await get('paymentProofs/'+id).catch(()=>null);proofs[id]=p?.image||'none';const el=document.querySelector(`[data-proof="${id}"]`);if(el)el.outerHTML=proofCell(id)}
+const proofCell=id=>proofs[id]&&proofs[id]!=='none'?`<img class="thumb" data-z="${id}" src="${proofs[id]}" alt="screenshot">`:`<span data-proof="${id}" class="sub" style="margin:0">${proofs[id]==='none'?'none':'loading…'}</span>`;
+function render(){
+  const t=D.tab;
+  if(t==='buys'){$('#bb').innerHTML=D.buys.length?D.buys.map(b=>`<tr><td>${when(b.createdAt)}</td><td>${esc(b.name)}<br><small class="sub">${esc(emailOf(b.uid))}</small></td><td>${proofCell(b.id)}</td><td><b>${esc(b.ref)}</b></td><td>${b.egp} EGP</td><td>${b.tokens}</td><td>${pill(b.status)}</td><td class="act">${b.status==='pending'?`<button class="sm go" data-a="bok" data-i="${b.id}">Paid – add tokens</button><button class="sm del" data-a="bno" data-i="${b.id}">Not paid</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No payment requests yet.</td></tr>';D.buys.forEach(b=>loadProof(b.id))}
+  if(t==='rewards')$('#rb').innerHTML=D.rewards.length?D.rewards.map(r=>`<tr><td>${when(r.createdAt)}</td><td>${esc(r.name)}</td><td>${esc(emailOf(r.uid))}</td><td>${RW[r.item]||esc(r.item)}</td><td>${(r.tokens||0).toLocaleString()}</td><td>${pill(r.status)}</td><td class="act">${r.status==='pending'?`<button class="sm go" data-a="rok" data-i="${r.id}">Approve &amp; take tokens</button><button class="sm del" data-a="rno" data-i="${r.id}">Decline</button>`:''}</td></tr>`).join(''):'<tr><td colspan=7 class="empty">No reward requests yet.</td></tr>';
+  if(t==='players'){const q=$('#q').value.toLowerCase();const w=Object.fromEntries(D.wallets.map(x=>[x.id,x]));const rows=D.users.filter(u=>(u.name+' '+u.email).toLowerCase().includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
+    $('#ub').innerHTML=rows.length?rows.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${when(u.createdAt)}</td><td>${(w[u.id]?.tokens||0).toLocaleString()}</td><td>${w[u.id]?.games||0}</td><td><button class="sm" data-a="reset" data-e="${esc(u.email)}">Send password reset email</button></td></tr>`).join(''):'<tr><td colspan=6 class="empty">No players yet.</td></tr>'}
+}
+async function boards(){const rows=(await list('leaderboard_'+$('#mode').value)).sort((a,b)=>b.score-a.score).slice(0,200);$('#sb').innerHTML=rows.length?rows.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${s.score}</td><td>${s.correct}</td><td>${when(s.date)}</td><td><button class="sm del" data-a="ds" data-i="${s.id}">Remove</button></td></tr>`).join(''):'<tr><td colspan=6 class="empty">No scores yet.</td></tr>'}
+async function ads(){const [a,c]=await Promise.all([list('ads'),list('adContacts')]);const cm=Object.fromEntries(c.map(x=>[x.id,x]));const o={pending:0,approved:1};
+  $('#ab').innerHTML=a.length?a.sort((x,y)=>(o[x.status]??9)-(o[y.status]??9)||(y.createdAt||0)-(x.createdAt||0)).map(x=>`<tr><td>${when(x.createdAt)}</td><td>${esc(x.business)}</td><td style="white-space:normal;min-width:180px">${esc(x.text)}</td><td>${esc(x.package)}</td><td><b>${esc(cm[x.id]?.payRef||'—')}</b></td><td>${esc(cm[x.id]?.contact||'')}</td><td>${pill(x.status)}</td><td class="act">${x.status==='pending'?`<button class="sm go" data-a="adok" data-i="${x.id}">Paid – approve</button><button class="sm del" data-a="adno" data-i="${x.id}">Reject</button>`:x.status==='approved'?`<button class="sm" data-a="adend" data-i="${x.id}">End ad</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No ads yet.</td></tr>'}
+async function pay(){const p=await get('config/payments');$('#ipa').value=p?.instapay||'';$('#wp').value=p?.weekPrice||'';$('#mp').value=p?.monthPrice||''}
+
+// Two-step buttons: the first click arms, the second does it.
+let armed=null;function arm(b,fn){if(armed===b){armed=null;b.disabled=true;fn().catch(e=>msg('Error: '+e.message)).finally(()=>{b.disabled=false});return}if(armed)armed.textContent=armed.dataset.l;b.dataset.l=b.textContent;b.textContent='Sure?';armed=b;setTimeout(()=>{if(armed===b){b.textContent=b.dataset.l;armed=null}},3000)}
+async function addTokens(uid,n){const w=await get('wallets/'+uid);if(w)await patch('wallets/'+uid,{tokens:(w.tokens||0)+n,updatedAt:Date.now()});else await create('wallets',uid,{tokens:n,games:0,spent:0,updatedAt:Date.now()})}
+document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]');if(z){$('#zoom img').src=proofs[z.dataset.z];$('#zoom').style.display='flex';return}if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.t){D.tab=b.dataset.t;document.querySelectorAll('.tabs [data-t]').forEach(x=>x.classList.toggle('on',x===b));['buys','rewards','players','boards','ads','pay'].forEach(id=>$('#'+id).hidden=id!==D.tab);({boards,ads,pay}[D.tab]||render)().catch(e=>msg('Error: '+e.message));return}
+  const a=b.dataset.a,id=b.dataset.i;
+  if(a==='bok')arm(b,async()=>{const r=await get('tokenPurchases/'+id);if(r.status!=='pending')throw new Error('already handled');await addTokens(r.uid,r.tokens);await patch('tokenPurchases/'+id,{status:'approved'});msg(`${r.tokens} tokens added to ${r.name}`);await load()});
+  if(a==='bno')arm(b,async()=>{await patch('tokenPurchases/'+id,{status:'rejected'});await load()});
+  if(a==='rok')arm(b,async()=>{const r=await get('rewardRequests/'+id);if(r.status!=='pending')throw new Error('already handled');const w=await get('wallets/'+r.uid);if(!w||w.tokens<r.tokens)throw new Error(`Not enough tokens (has ${w?.tokens??0})`);await patch('wallets/'+r.uid,{tokens:w.tokens-r.tokens,spent:(w.spent||0)+r.tokens,updatedAt:Date.now()});await patch('rewardRequests/'+id,{status:'approved'});msg('Approved – email the player to arrange delivery');await load()});
+  if(a==='rno')arm(b,async()=>{await patch('rewardRequests/'+id,{status:'rejected'});await load()});
+  if(a==='reset')arm(b,async()=>{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email:b.dataset.e});msg('Reset email sent to '+b.dataset.e)});
+  if(a==='ds')arm(b,async()=>{await del(`leaderboard_${$('#mode').value}/${id}`);await boards()});
+  if(a==='adok'||a==='adno'||a==='adend')arm(b,async()=>{await patch('ads/'+id,{status:{adok:'approved',adno:'rejected',adend:'ended'}[a]});await ads()});
+  if(b.id==='savepay'){const instapay=$('#ipa').value.trim(),weekPrice=+$('#wp').value,monthPrice=+$('#mp').value;if(!instapay||!(weekPrice>0)||!(monthPrice>0))return msg('Fill in all three');await patch('config/payments',{instapay,weekPrice:Math.round(weekPrice),monthPrice:Math.round(monthPrice),updatedAt:Date.now()}).then(()=>msg('Saved'),e=>msg('Error: '+e.message))}
+});
+$('#q').oninput=render;$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
+
+function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
+finishLink().then(show);
+setInterval(()=>{if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
+</script></body></html>
