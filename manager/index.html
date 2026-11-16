@@ -68,7 +68,7 @@ const MODES=['easy','medium','hard','mixed','daily'];
 const RW={ticket:'🎟️ Match ticket',fancard:'🪪 Fan card',ball:'⚽ Ball',fanshirt:'👕 Fan shirt',boots:'👟 Boots',official:'🏆 Official shirt'};
 const $=s=>document.querySelector(s);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'-';
 const msg=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.display='none',3000)};
 const pill=s=>`<span class="pill ${s}">${s}</span>`;
@@ -122,8 +122,7 @@ async function load(){
 }
 const proofs={};
 async function loadProof(id){if(id in proofs)return;proofs[id]='';const p=await get('paymentProofs/'+id).catch(()=>null);proofs[id]=p?.image||'none';const el=document.querySelector(`[data-proof="${id}"]`);if(el)el.outerHTML=proofCell(id)}
-const safeImg=u=>/^(https:\/\/|data:image\/)/i.test(u);
-const proofCell=id=>proofs[id]&&proofs[id]!=='none'&&safeImg(proofs[id])?`<img class="thumb" data-z="${esc(id)}" src="${esc(proofs[id])}" alt="screenshot">`:`<span data-proof="${esc(id)}" class="sub" style="margin:0">${proofs[id]==='none'?'none':'loading…'}</span>`;
+const proofCell=id=>proofs[id]&&proofs[id]!=='none'?`<img class="thumb" data-z="${id}" src="${proofs[id]}" alt="screenshot">`:`<span data-proof="${id}" class="sub" style="margin:0">${proofs[id]==='none'?'none':'loading…'}</span>`;
 function render(){
   const t=D.tab;
   if(t==='buys'){$('#bb').innerHTML=D.buys.length?D.buys.map(b=>`<tr><td>${when(b.createdAt)}</td><td>${esc(b.name)}<br><small class="sub">${esc(emailOf(b.uid))}</small></td><td>${proofCell(b.id)}</td><td><b>${esc(b.ref)}</b></td><td>${b.egp} EGP</td><td>${b.tokens}</td><td>${pill(b.status)}</td><td class="act">${b.status==='pending'?`<button class="sm go" data-a="bok" data-i="${b.id}">Paid – add tokens</button><button class="sm del" data-a="bno" data-i="${b.id}">Not paid</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No payment requests yet.</td></tr>';D.buys.forEach(b=>loadProof(b.id))}
@@ -139,7 +138,7 @@ async function pay(){const p=await get('config/payments');$('#ipa').value=p?.ins
 // Two-step buttons: the first click arms, the second does it.
 let armed=null;function arm(b,fn){if(armed===b){armed=null;b.disabled=true;fn().catch(e=>msg('Error: '+e.message)).finally(()=>{b.disabled=false});return}if(armed)armed.textContent=armed.dataset.l;b.dataset.l=b.textContent;b.textContent='Sure?';armed=b;setTimeout(()=>{if(armed===b){b.textContent=b.dataset.l;armed=null}},3000)}
 async function addTokens(uid,n){const w=await get('wallets/'+uid);if(w)await patch('wallets/'+uid,{tokens:(w.tokens||0)+n,updatedAt:Date.now()});else await create('wallets',uid,{tokens:n,games:0,spent:0,updatedAt:Date.now()})}
-document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]');if(z){const src=proofs[z.dataset.z];if(src&&safeImg(src)){$('#zoom img').src=src;$('#zoom').style.display='flex'}return}if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
+document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]');if(z){$('#zoom img').src=proofs[z.dataset.z];$('#zoom').style.display='flex';return}if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.t){D.tab=b.dataset.t;document.querySelectorAll('.tabs [data-t]').forEach(x=>x.classList.toggle('on',x===b));['buys','rewards','players','boards','ads','pay'].forEach(id=>$('#'+id).hidden=id!==D.tab);({boards,ads,pay}[D.tab]||render)().catch(e=>msg('Error: '+e.message));return}
   const a=b.dataset.a,id=b.dataset.i;
