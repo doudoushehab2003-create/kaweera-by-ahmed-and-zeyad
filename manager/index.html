@@ -74,6 +74,16 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
   <button id="send">Email me a one-time sign-in link</button>
 </section>
 
+<section id="lock" class="login" hidden>
+  <div style="text-align:center;font-size:56px">🔒</div>
+  <h2 style="text-align:center;margin:0">Unlock with your fingerprint</h2>
+  <p class="sub" style="text-align:center" id="lockmsg"></p>
+  <button class="go" id="unlockBtn" hidden>👆 Unlock with Touch ID / Face ID</button>
+  <button class="go" id="setupBtn" hidden>👆 Set up fingerprint on this device</button>
+  <button id="lockLink">Confirm it's you by email (needed to set up a new device)</button>
+  <button class="lnk" id="lockOut">Sign out</button>
+</section>
+
 <main id="app" hidden>
   <div class="tabs" id="tabs">
     <button data-t="today" class="on">📋 Today</button>
@@ -150,6 +160,8 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
       <input id="newpw" type="password" autocomplete="new-password" placeholder="New password (8+ characters)">
       <button class="go" id="setpw">Save password</button>
       <button id="enroll" hidden>Add a passkey (Touch ID / Face ID)</button>
+      <button class="del" id="forgetFinger">Remove this device's fingerprint lock</button>
+      <small class="sub" style="margin:0">After removing it, opening the Manager on this device needs the email link again to set up a new fingerprint.</small>
     </div>
     <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
       <b>InstaPay and ad prices</b>
@@ -198,8 +210,8 @@ async function token(){
   const j=await r.json();if(!r.ok){signOut();throw new Error('signed-out')}
   session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+j.expires_in*1000};store.set('kwSession',session);return session.idToken;
 }
-function signOut(){session=null;store.set('kwSession',null);show()}
-const startSession=j=>{session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)};
+function signOut(){session=null;store.set('kwSession',null);lockNow();show()}
+const startSession=(j,via='password')=>{session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000,via,at:Date.now()};store.set('kwSession',session);lockNow()};
 function emailFromUser(u){u=u.trim().toLowerCase();if(u.includes('@'))return u;return USERNAMES.includes(u)?OWNER:null}
 $('#pwgo').onclick=async()=>{
   const email=emailFromUser($('#user').value),pw=$('#pass').value;
@@ -216,7 +228,7 @@ $('#forgot').onclick=async()=>{try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{
 $('#send').onclick=async()=>{$('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email:OWNER,continueUrl:location.origin+location.pathname});$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
 async function finishLink(){
   const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
-  try{startSession(await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email:OWNER,oobCode:p.get('oobCode')}))}
+  try{startSession(await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email:OWNER,oobCode:p.get('oobCode')}),'link')}
   catch(e){$('#loginmsg').textContent='That link expired or was already used. Ask for a new one.'}
   history.replaceState(null,'',location.pathname+location.hash);
 }
@@ -229,10 +241,55 @@ async function verifySession(){
 }
 $('#setpw').onclick=async()=>{const pw=$('#newpw').value;if(pw.length<8)return msg('Use at least 8 characters');try{const j=await post(`${AUTH}:update?key=${KEY}`,{idToken:await token(),password:pw,returnSecureToken:true});session={...session,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session);$('#newpw').value='';msg('Password saved. Sign in with admin + this password.')}catch(e){msg(/CREDENTIAL_TOO_OLD|REQUIRES_RECENT/.test(e.message)?'For safety, sign out and in again, then set the password.':'Error: '+e.message)}};
 $('#out').onclick=signOut;
+$('#forgetFinger').onclick=()=>{store.set('kwFinger',null);lockNow();msg('Fingerprint removed from this device');signOut()};
 const pk=window.managerPasskeys||{available:false};
 $('#passkey').hidden=!pk.available;$('#enroll').hidden=!pk.available;
-$('#passkey').onclick=async()=>{$('#passkey').disabled=true;try{const {customToken}=await pk.login();startSession(await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true}));await verifySession();show()}catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled.':e.message}finally{$('#passkey').disabled=false}};
+$('#passkey').onclick=async()=>{$('#passkey').disabled=true;try{const {customToken}=await pk.login();startSession(await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true}),'passkey');await verifySession();show()}catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled.':e.message}finally{$('#passkey').disabled=false}};
 $('#enroll').onclick=async()=>{try{await pk.register(await token());msg('Passkey saved.')}catch(e){msg(e.message)}};
+
+// ---------- fingerprint lock (second step after the password) ----------
+/*
+ * After signing in, the Manager stays locked until the owner passes Touch ID / Face ID on this
+ * device (a passkey kept in the device's secure chip). A device can only be set up right after
+ * signing in with the one-time email link, so the password alone never opens it. It locks again
+ * after 10 minutes in the background or when the app is reopened.
+ */
+const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const LOCK_AFTER=10*6e4;
+const hasWebAuthn=()=>!!(window.PublicKeyCredential&&navigator.credentials);
+const credId=()=>store.get('kwFinger');
+function isUnlocked(){try{return Number(sessionStorage.getItem('kwUnlocked')||0)>Date.now()-LOCK_AFTER}catch{return false}}
+function markUnlocked(){try{sessionStorage.setItem('kwUnlocked',String(Date.now()))}catch{}}
+function lockNow(){try{sessionStorage.removeItem('kwUnlocked')}catch{}}
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else{if(hiddenAt&&Date.now()-hiddenAt>LOCK_AFTER){lockNow();show()}else if(isUnlocked())markUnlocked()}});
+document.addEventListener('pointerdown',()=>{if(isUnlocked())markUnlocked()},{passive:true});
+const canEnroll=()=>session?.via==='link'&&Date.now()-(session.at||0)<15*6e4;
+function showLock(){
+  const id=credId(),web=hasWebAuthn();
+  $('#unlockBtn').hidden=!id||!web;$('#setupBtn').hidden=!!id||!web||!canEnroll();
+  $('#lockLink').hidden=!!id&&web;
+  $('#lockmsg').textContent=!web?'This browser can’t use Touch ID / Face ID. Open the Manager in Safari or Chrome on your iPhone or Mac.'
+    :id?'Signed in. Touch the sensor (or look at the phone) to open the Manager.'
+    :canEnroll()?'Email confirmed. Now set up your fingerprint on this device. Next time only your password and fingerprint are needed.'
+    :'This device has no fingerprint set up yet. For safety, confirm it’s you with the email link first, then set it up.';
+}
+// Safari only shows the Touch ID sheet if navigator.credentials is called straight from the tap.
+$('#unlockBtn').onclick=()=>{
+  const challenge=crypto.getRandomValues(new Uint8Array(32));
+  navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id:unb64(credId())}],userVerification:'required',timeout:60000,rpId:location.hostname}})
+    .then(c=>{if(!c)throw new Error('cancelled');if(!c.response.authenticatorData||!(new Uint8Array(c.response.authenticatorData)[32]&4))throw new Error('Fingerprint not confirmed');markUnlocked();show()})
+    .catch(e=>{$('#lockmsg').textContent=e.name==='NotAllowedError'?'Not unlocked. Try again.':e.name==='InvalidStateError'||e.name==='NotFoundError'?'This device’s fingerprint key is gone. Confirm by email and set it up again.':'Could not unlock: '+e.message;if(e.name==='NotFoundError'||e.name==='InvalidStateError'){store.set('kwFinger',null);showLock()}});
+};
+$('#setupBtn').onclick=()=>{
+  if(!canEnroll())return showLock();
+  const challenge=crypto.getRandomValues(new Uint8Array(32)),user=crypto.getRandomValues(new Uint8Array(16));
+  navigator.credentials.create({publicKey:{challenge,rp:{name:'Kaweera Manager',id:location.hostname},user:{id:user,name:'admin',displayName:'Kaweera owner'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000,attestation:'none'}})
+    .then(c=>{store.set('kwFinger',b64(c.rawId));session={...session,via:'password'};store.set('kwSession',session);markUnlocked();msg('Fingerprint set up on this device 👆');show()})
+    .catch(e=>{$('#lockmsg').textContent=e.name==='NotAllowedError'?'Setup cancelled. Try again.':'Could not set up: '+e.message});
+};
+$('#lockLink').onclick=async()=>{$('#lockLink').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email:OWNER,continueUrl:location.origin+location.pathname});$('#lockmsg').textContent='Email sent. Open the link on this device; you’ll come back here to set up your fingerprint.'}catch(e){$('#lockmsg').textContent='Could not send: '+e.message}$('#lockLink').disabled=false};
+$('#lockOut').onclick=()=>signOut();
 
 // ---------- Firestore (REST) ----------
 const enc=v=>v===null||v===undefined?{nullValue:null}:typeof v==='string'?{stringValue:v}:typeof v==='boolean'?{booleanValue:v}:typeof v==='number'?(Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v}):Array.isArray(v)?{arrayValue:{values:v.map(enc)}}:{mapValue:{fields:encF(v)}};
@@ -434,8 +491,8 @@ const VIEWS={today,buys,rewards,reviews,reports,players,weekly,boards,ads,log,se
 function go(t){D.tab=t;document.querySelectorAll('#tabs [data-t]').forEach(x=>x.classList.toggle('on',x.dataset.t===t));Object.keys(VIEWS).forEach(id=>$('#'+id).hidden=id!==t);store.set('kwTab',t);refresh()}
 function refresh(){return Promise.resolve().then(()=>VIEWS[D.tab]()).then(()=>D.tab!=='today'&&badges()).catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
 const LIVE=['today','buys','rewards','reviews','reports'];
-setInterval(()=>{if(!session||document.hidden||armed||!$('#pp').hidden||!LIVE.includes(D.tab)||document.activeElement?.tagName==='INPUT'||Object.values(SEL).some(s=>s.size))return;drop('counts',D.tab);refresh()},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session&&LIVE.includes(D.tab)){drop('counts',D.tab);refresh()}});
+setInterval(()=>{if(!session||!isUnlocked()||document.hidden||armed||!$('#pp').hidden||!LIVE.includes(D.tab)||document.activeElement?.tagName==='INPUT'||Object.values(SEL).some(s=>s.size))return;drop('counts',D.tab);refresh()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session&&isUnlocked()&&LIVE.includes(D.tab)){drop('counts',D.tab);refresh()}});
 
 // ---------- clicks ----------
 const reload=(...k)=>{drop('counts','stats',...k);refresh()};
@@ -496,6 +553,6 @@ let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(players,150)};
 for(const [sel,v] of [['#buysF','buys'],['#rewardsF','rewards'],['#reviewsF','reviews'],['#reportsF','reports'],['#playersF','players'],['#mode','boards']])$(sel).onchange=()=>VIEWS[v]().catch(e=>msg('Error: '+e.message));
 $('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));
 
-function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as admin · lists refresh every 30 s while open':'Owner only.';if(ok){const t=location.hash==='#new'?'players':store.get('kwTab')||'today';if(location.hash==='#new')$('#playersF').value='new';go(VIEWS[t]?t:'today')}else{$('#user').value=store.get('kwUser')||'admin';$('#pass').focus()}}
+function show(){const ok=session&&session.email===OWNER;const open=ok&&isUnlocked();$('#login').hidden=!!ok;$('#lock').hidden=!ok||open;$('#app').hidden=!open;if(ok&&!open){showLock();return}$('#who').textContent=ok?'Signed in as admin · lists refresh every 30 s while open':'Owner only.';if(ok){const t=location.hash==='#new'?'players':store.get('kwTab')||'today';if(location.hash==='#new')$('#playersF').value='new';go(VIEWS[t]?t:'today')}else{$('#user').value=store.get('kwUser')||'admin';$('#pass').focus()}}
 finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show);
 </script></body></html>
