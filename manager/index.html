@@ -38,10 +38,12 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
 
 <section id="login" class="login" hidden>
   <button class="go" id="passkey" hidden>Sign in with Touch ID / passkey</button>
-  <p id="passkeynote">Passkeys require server setup. Owner email sign-in remains available.</p>
-  <p>Sign in with the owner email to enroll a passkey or recover access.</p>
-  <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
-  <button class="go" id="send">Email me a sign-in link</button>
+  <p id="passkeynote">Passkeys require server setup. Email/password sign-in is available.</p>
+  <p>Sign in with your manager email and password.</p>
+  <input id="email" type="email" autocomplete="username" value="ahmedabdelgawad11803@gmail.com" aria-label="Manager email">
+  <input id="password" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
+  <button class="go" id="passwordlogin">Sign in</button>
+  <button id="resetpassword" type="button">Forgot password?</button>
   <p class="sub" id="loginmsg"></p>
 </section>
 
@@ -86,7 +88,7 @@ const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'sh
 const msg=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.display='none',3000)};
 const pill=s=>`<span class="pill ${s}">${s}</span>`;
 
-// ---------- sign-in with an email link ----------
+// ---------- email/password and persistent owner session ----------
 let session=store.get('kwSession');
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j}
 async function token(){
@@ -94,18 +96,39 @@ async function token(){
   if(Date.now()<session.exp-60000)return session.idToken;
   const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(session.refreshToken)});
   const j=await r.json();if(!r.ok){signOut();throw new Error('signed-out')}
-  session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+j.expires_in*1000};store.set('kwSession',session);return session.idToken;
+  session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+Number(j.expires_in)*1000};store.set('kwSession',session);return session.idToken;
 }
 function signOut(){session=null;store.set('kwSession',null);show()}
-$('#send').onclick=async()=>{const email=$('#email').value.trim().toLowerCase();if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
-  $('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email,continueUrl:location.origin+location.pathname+location.hash});store.set('kwEmail',email);$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
-async function finishLink(){
-  const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
-  const email=store.get('kwEmail')||OWNER;
-  try{const j=await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email,oobCode:p.get('oobCode')});session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)}
-  catch(e){$('#loginmsg').textContent='That link expired or was already used. Ask for a new one.'}
-  history.replaceState(null,'',location.pathname+location.hash);
+function friendlyAuthError(e){
+  const err=String(e.message||e);
+  if(err.includes('OPERATION_NOT_ALLOWED'))return 'Email/password sign-in must be enabled in Firebase Authentication.';
+  if(/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(err))return 'Incorrect email or password.';
+  if(err.includes('TOO_MANY_ATTEMPTS_TRY_LATER'))return 'Too many attempts. Try again later.';
+  return 'Could not sign in: '+err;
 }
+async function signInWithPassword(){
+  const email=$('#email').value.trim().toLowerCase(),password=$('#password').value;
+  const btn=$('#passwordlogin');
+  if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
+  if(!password){$('#loginmsg').textContent='Enter your password.';return}
+  btn.disabled=true;$('#loginmsg').textContent='';
+  try{
+    const j=await post(`${AUTH}:signInWithPassword?key=${KEY}`,{email,password,returnSecureToken:true});
+    session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
+    await verifySession();store.set('kwSession',session);$('#password').value='';show();
+  }catch(e){session=null;store.set('kwSession',null);$('#loginmsg').textContent=friendlyAuthError(e)}
+  finally{btn.disabled=false}
+}
+$('#passwordlogin').onclick=signInWithPassword;
+$('#password').addEventListener('keydown',e=>{if(e.key==='Enter')signInWithPassword()});
+$('#resetpassword').onclick=async()=>{
+  const email=$('#email').value.trim().toLowerCase();
+  if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can reset the Manager password.';return}
+  $('#resetpassword').disabled=true;
+  try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email});$('#loginmsg').textContent='If this account supports password login, a reset email has been sent.'}
+  catch(e){$('#loginmsg').textContent='Could not request a password reset: '+e.message}
+  finally{$('#resetpassword').disabled=false}
+};
 $('#out').onclick=signOut;
 async function verifySession(){
   if(!session)return;
@@ -198,6 +221,6 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
 $('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
 
 function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
-finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
+Promise.resolve().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
 setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
 </script></body></html>
