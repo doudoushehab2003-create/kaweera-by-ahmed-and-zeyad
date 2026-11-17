@@ -2,12 +2,6 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Kaweera Manager</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="../icons/icon-180.png">
-<meta name="theme-color" content="#06150c">
-<meta name="apple-mobile-web-app-title" content="KAWEERA Manager">
-<script src="./passkey-config.js"></script>
-<script src="./passkeys.js"></script>
 <style>
 [hidden]{display:none!important}
 :root{--bg:#06150c;--card:#0d2616;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--ink:#04200f}
@@ -37,14 +31,17 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
 <p class="sub" id="who"></p>
 
 <section id="login" class="login" hidden>
-  <button class="go" id="passkey" hidden>Sign in with Touch ID / passkey</button>
-  <p id="passkeynote">Passkeys require server setup. Email/password sign-in is available.</p>
-  <p>Sign in with your manager email and password.</p>
-  <input id="email" type="email" autocomplete="username" value="ahmedabdelgawad11803@gmail.com" aria-label="Manager email">
-  <input id="password" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password">
-  <button class="go" id="passwordlogin">Sign in</button>
-  <button id="resetpassword" type="button">Forgot password?</button>
+  <p>Sign in with the owner email. We send a sign-in link to your inbox.</p>
+  <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
+  <button class="go" id="send">Email me a sign-in link</button>
   <p class="sub" id="loginmsg"></p>
+</section>
+
+<section id="lock" class="login" hidden>
+  <p style="font-size:42px;margin:0">🔒</p>
+  <p id="lockText">Kaweera Manager is locked.</p>
+  <button class="go" id="unlock">Unlock with Touch ID / Face ID</button>
+  <p class="sub" id="lockmsg"></p>
 </section>
 
 <main id="app" hidden>
@@ -58,7 +55,6 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
     <button data-t="boards">Leaderboards</button>
     <button data-t="ads">📣 Ads</button>
     <button data-t="pay">💳 InstaPay</button>
-    <button id="enroll" hidden>Add a passkey</button>
     <button id="out" style="margin-left:auto">Sign out</button>
   </div>
   <section id="buys"><p class="sub">New payment requests appear here by themselves. Check the screenshot and your InstaPay, then approve to add the tokens.</p><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Screenshot</th><th>Reference</th><th>Paid</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="bb"></tbody></table></div></section>
@@ -88,7 +84,7 @@ const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'sh
 const msg=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.display='none',3000)};
 const pill=s=>`<span class="pill ${s}">${s}</span>`;
 
-// ---------- email/password and persistent owner session ----------
+// ---------- sign-in with an email link ----------
 let session=store.get('kwSession');
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j}
 async function token(){
@@ -96,66 +92,19 @@ async function token(){
   if(Date.now()<session.exp-60000)return session.idToken;
   const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(session.refreshToken)});
   const j=await r.json();if(!r.ok){signOut();throw new Error('signed-out')}
-  session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+Number(j.expires_in)*1000};store.set('kwSession',session);return session.idToken;
+  session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+j.expires_in*1000};store.set('kwSession',session);return session.idToken;
 }
 function signOut(){session=null;store.set('kwSession',null);show()}
-function friendlyAuthError(e){
-  const err=String(e.message||e);
-  if(err.includes('OPERATION_NOT_ALLOWED'))return 'Email/password sign-in must be enabled in Firebase Authentication.';
-  if(/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(err))return 'Incorrect email or password.';
-  if(err.includes('TOO_MANY_ATTEMPTS_TRY_LATER'))return 'Too many attempts. Try again later.';
-  return 'Could not sign in: '+err;
+$('#send').onclick=async()=>{const email=$('#email').value.trim().toLowerCase();if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
+  $('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email,continueUrl:location.origin+location.pathname+location.hash});store.set('kwEmail',email);$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
+async function finishLink(){
+  const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
+  const email=store.get('kwEmail')||OWNER;
+  try{const j=await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email,oobCode:p.get('oobCode')});session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)}
+  catch(e){$('#loginmsg').textContent='That link expired or was already used. Ask for a new one.'}
+  history.replaceState(null,'',location.pathname+location.hash);
 }
-async function signInWithPassword(){
-  const email=$('#email').value.trim().toLowerCase(),password=$('#password').value;
-  const btn=$('#passwordlogin');
-  if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
-  if(!password){$('#loginmsg').textContent='Enter your password.';return}
-  btn.disabled=true;$('#loginmsg').textContent='';
-  try{
-    const j=await post(`${AUTH}:signInWithPassword?key=${KEY}`,{email,password,returnSecureToken:true});
-    session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
-    await verifySession();store.set('kwSession',session);$('#password').value='';show();
-  }catch(e){session=null;store.set('kwSession',null);$('#loginmsg').textContent=friendlyAuthError(e)}
-  finally{btn.disabled=false}
-}
-$('#passwordlogin').onclick=signInWithPassword;
-$('#password').addEventListener('keydown',e=>{if(e.key==='Enter')signInWithPassword()});
-$('#resetpassword').onclick=async()=>{
-  const email=$('#email').value.trim().toLowerCase();
-  if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can reset the Manager password.';return}
-  $('#resetpassword').disabled=true;
-  try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email});$('#loginmsg').textContent='If this account supports password login, a reset email has been sent.'}
-  catch(e){$('#loginmsg').textContent='Could not request a password reset: '+e.message}
-  finally{$('#resetpassword').disabled=false}
-};
 $('#out').onclick=signOut;
-async function verifySession(){
-  if(!session)return;
-  const j=await post(`${AUTH}:lookup?key=${KEY}`,{idToken:await token()});
-  const u=j.users?.[0];
-  if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
-  session.email=u.email;store.set('kwSession',session);
-}
-$('#passkey').hidden=!managerPasskeys.available;
-$('#enroll').hidden=!managerPasskeys.available;
-if(managerPasskeys.available)$('#passkeynote').textContent='Use an enrolled passkey. Your Mac may offer Touch ID or its device password. Sign-in is remembered on this browser or Dock app until you sign out or the session expires.';
-$('#passkey').onclick=async()=>{
-  $('#passkey').disabled=true;
-  try{
-    const {customToken}=await managerPasskeys.login();
-    const j=await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true});
-    session={idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
-    await verifySession();show();
-  }catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled or unavailable. Try again or use email.':e.message}
-  finally{$('#passkey').disabled=false}
-};
-$('#enroll').onclick=async()=>{
-  $('#enroll').disabled=true;
-  try{await managerPasskeys.register(await token());msg('Passkey saved. You can now sign in with it from the Dock app.')}
-  catch(e){msg(e.name==='NotAllowedError'?'Passkey setup cancelled.':e.message+' Use a new owner email link within 5 minutes.')}
-  finally{$('#enroll').disabled=false}
-};
 
 // ---------- Firestore ----------
 const enc=v=>typeof v==='string'?{stringValue:v}:Number.isInteger(v)?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{doubleValue:v};
@@ -220,7 +169,36 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
 });
 $('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
 
-function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
-Promise.resolve().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
-setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
+// ---------- fingerprint lock (passkey on this device: Touch ID on Mac, Face ID / Touch ID on iPhone) ----------
+const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
+let unlocked=false, hiddenAt=0;
+async function hasFingerprint(){try{return !!window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()}catch{return false}}
+async function setupPasskey(){
+  const cred=await navigator.credentials.create({publicKey:{rp:{name:'Kaweera Manager',id:location.hostname},user:{id:rnd(16),name:OWNER,displayName:'Kaweera owner'},challenge:rnd(32),
+    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000}});
+  store.set('kwPasskey',{id:b64u(cred.rawId),email:OWNER,at:Date.now()});
+}
+async function unlockPasskey(){
+  const pk=store.get('kwPasskey');
+  await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:unb64u(pk.id),transports:['internal']}],userVerification:'required',timeout:60000,rpId:location.hostname}});
+}
+$('#unlock').onclick=async()=>{
+  $('#lockmsg').textContent='';
+  if(!(await hasFingerprint())){$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.';return}
+  try{
+    if(!store.get('kwPasskey')){await setupPasskey()} else {await unlockPasskey()}
+    unlocked=true;show();
+  }catch(e){$('#lockmsg').textContent=e&&e.name==='NotAllowedError'?'Cancelled or not recognised. Try again.':'Could not use the fingerprint: '+(e&&e.message||e)}
+};
+// Lock again after 2 minutes in the background.
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(unlocked&&hiddenAt&&Date.now()-hiddenAt>120000){unlocked=false;show()}});
+
+function show(){const signedIn=session&&session.email===OWNER;const ok=signedIn&&unlocked;
+  $('#lock').hidden=!(signedIn&&!unlocked);
+  if(signedIn&&!unlocked){$('#lockText').textContent=store.get('kwPasskey')?'Kaweera Manager is locked.':'Turn on the fingerprint lock: from now on only your Touch ID / Face ID opens the Manager on this device.';$('#unlock').textContent=store.get('kwPasskey')?'Unlock with Touch ID / Face ID':'Turn on Touch ID / Face ID lock';hasFingerprint().then(h=>{if(!h){$('#unlock').disabled=true;$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.'}})}
+  $('#login').hidden=!!signedIn;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
+finishLink().then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
+setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&unlocked&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
 </script></body></html>

@@ -1,1 +1,0 @@
-{"functions":[{"source":"passkey-backend","codebase":"manager-passkeys","runtime":"nodejs22"}],"firestore":[{"database":"manager-passkeys","rules":"passkey-backend/firestore.rules"}]}
