@@ -1,96 +1,194 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Kaweera Manager</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-180.png">
 <meta name="theme-color" content="#06150c">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="KAWEERA Manager">
 <script src="./passkey-config.js"></script>
 <script src="./passkeys.js"></script>
 <style>
 [hidden]{display:none!important}
-:root{--bg:#06150c;--card:#0d2616;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--ink:#04200f}
-@media (prefers-color-scheme:light){:root{--bg:#eef5ee;--card:#fff;--line:#cfe0d3;--fg:#10281a;--mut:#58705f;--neon:#0a9d4c;--gold:#b87d00;--red:#d32f2f;--ink:#fff}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif;padding:20px max(16px,env(safe-area-inset-left)) 40px max(16px,env(safe-area-inset-right))}
-h1{margin:0 0 4px;font-size:26px}h1 span{color:var(--neon)}.sub{color:var(--mut);margin:0 0 16px}
-.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:7px 14px}
+:root{--bg:#06150c;--card:#0d2616;--card2:#123220;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--blue:#60a5fa;--ink:#04200f}
+@media (prefers-color-scheme:light){:root{--bg:#eef5ee;--card:#fff;--card2:#f4faf5;--line:#cfe0d3;--fg:#10281a;--mut:#58705f;--neon:#0a9d4c;--gold:#b87d00;--red:#d32f2f;--blue:#1d6fd8;--ink:#fff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 90px max(16px,env(safe-area-inset-left))}
+h1{margin:0 0 2px;font-size:24px}h1 span{color:var(--neon)}h2{font-size:18px;margin:18px 0 8px}h3{font-size:15px;margin:14px 0 6px;color:var(--gold)}
+.sub{color:var(--mut);margin:0 0 12px;font-size:13px}
+.tabs{display:flex;gap:6px;margin:12px 0 14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{white-space:nowrap;flex:none}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--fg);padding:7px 13px}
 button.on,button.go{background:var(--neon);color:var(--ink);border-color:var(--neon);font-weight:700}
-button.del{color:var(--red);border-color:var(--red)}button.sm{padding:3px 10px;font-size:13px}button:disabled{opacity:.5;cursor:default}
-.badge{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;margin-left:4px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.stat b{display:block;font-size:28px;color:var(--gold)}.stat small{color:var(--mut)}
-input,select{font:inherit;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0}
-.bar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}.bar input{flex:1;min-width:180px}
+button.del{color:var(--red);border-color:var(--red)}button.warn{color:var(--gold);border-color:var(--gold)}button.sm{padding:4px 10px;font-size:13px}button:disabled{opacity:.5;cursor:default}
+a.lnk,button.lnk{background:none;border:0;padding:0;color:var(--blue);text-decoration:underline;cursor:pointer;font:inherit}
+.badge{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--red);color:#fff;font-size:12px;margin-left:4px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}.stat b{display:block;font-size:26px;color:var(--gold);line-height:1.15}.stat small{color:var(--mut)}
+.stat.todo{cursor:pointer}.stat.todo.hot{border-color:var(--gold);background:var(--card2)}.stat.todo.hot b{color:var(--neon)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:34px;margin-top:6px}.spark i{flex:1;background:var(--neon);border-radius:3px 3px 0 0;min-height:2px;opacity:.8}
+input,select,textarea{font:inherit;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:0}
+.bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}.bar input[type=search]{flex:1;min-width:160px}
 .wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
-table{width:100%;border-collapse:collapse;min-width:680px}th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
-th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-bottom:0}td.act{display:flex;gap:6px}
-.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid}.pending{color:var(--gold)}.approved{color:var(--neon)}.rejected,.ended{color:var(--red)}
-.thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--line)}
-#msg{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--neon);padding:9px 18px;border-radius:12px;display:none;z-index:9}
-#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:8;padding:16px}#zoom img{max-width:100%;max-height:100%;border-radius:10px}
-.empty{padding:22px;color:var(--mut);text-align:center}
-.login{max-width:420px;margin:40px auto;display:flex;flex-direction:column;gap:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:8px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--mut);font-weight:600;font-size:12px;white-space:nowrap}tr:last-child td{border-bottom:0}td.act{white-space:nowrap}td.act button{margin:2px 4px 2px 0}
+td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08)}tr.flag{background:rgba(255,90,95,.08)}
+.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid;white-space:nowrap}.pending,.open,.warned{color:var(--gold)}.approved,.reviewed,.handled,.ok{color:var(--neon)}.rejected,.ended,.banned{color:var(--red)}
+.thumb{width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:zoom-in;border:1px solid var(--line)}
+.empty{padding:20px;color:var(--mut);text-align:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bulk{position:sticky;top:0;z-index:3;background:var(--card2);border:1px solid var(--neon);border-radius:12px;padding:8px 10px;margin-bottom:10px}
+#toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--card);border:1px solid var(--neon);padding:9px 12px 9px 16px;border-radius:12px;display:none;z-index:20;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:30;padding:16px}#zoom img{max-width:100%;max-height:100%;border-radius:10px}
+#pp{position:fixed;inset:0;z-index:15;background:rgba(0,0,0,.6);display:flex;justify-content:flex-end}
+#pp .panel{width:min(620px,100%);height:100%;overflow:auto;background:var(--bg);border-left:1px solid var(--line);padding:max(16px,env(safe-area-inset-top)) 16px 40px}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0}.kv div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px}.kv b{display:block;font-size:18px}.kv small{color:var(--mut)}
+.login{max-width:400px;margin:28px auto;display:flex;flex-direction:column;gap:10px}
+.login .or{color:var(--mut);text-align:center;font-size:13px;margin:6px 0}
+.chk{width:20px;height:20px;accent-color:var(--neon)}
+/* Phone: tables become cards with big buttons. */
+@media (max-width:700px){
+  .wrap{background:none;border:0;overflow:visible}
+  table,tbody,tr,td{display:block;width:100%}thead{display:none}
+  tr{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;padding:6px 4px}
+  td{border:0;padding:5px 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  td[data-l]::before{content:attr(data-l);color:var(--mut);font-size:12px;min-width:84px}
+  td.act{display:flex;gap:8px}td.act button{flex:1;padding:11px 10px;font-size:15px;margin:0}
+  td.wide{min-width:0}
+  .thumb{width:100%;height:auto;max-height:260px;object-fit:contain}
+}
 </style></head><body>
 <h1>كويرة <span>Kaweera Manager</span></h1>
 <p class="sub" id="who"></p>
 
 <section id="login" class="login" hidden>
-  <button class="go" id="passkey" hidden>Sign in with Touch ID / passkey</button>
-  <p id="passkeynote">Passkeys require server setup. Owner email sign-in remains available.</p>
-  <p>Sign in with the owner email to enroll a passkey or recover access.</p>
-  <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
-  <button class="go" id="send">Email me a sign-in link</button>
-  <p class="sub" id="loginmsg"></p>
+  <label>Username or email<br><input id="user" autocomplete="username" autocapitalize="none" style="width:100%" placeholder="admin"></label>
+  <label>Password<br><input id="pass" type="password" autocomplete="current-password" style="width:100%"></label>
+  <button class="go" id="pwgo">Sign in</button>
+  <button class="lnk" id="forgot">Forgot or never set a password? Email me a link to set one</button>
+  <p class="sub" id="loginmsg" role="status"></p>
+  <div class="or">— or —</div>
+  <button id="passkey" hidden>Sign in with Touch ID / passkey</button>
+  <button id="send">Email me a one-time sign-in link</button>
 </section>
 
 <main id="app" hidden>
-  <div class="stats" id="stats"></div>
-  <div class="tabs">
-    <button data-t="buys" class="on">🪙 Payments <span class="badge" id="nb" hidden></span></button>
-    <button data-t="rewards">🎁 Rewards <span class="badge" id="nr" hidden></span></button>
-    <button data-t="players">👥 All accounts</button>
-    <button data-t="players" data-new="1">🆕 New accounts <span class="badge" id="nn" hidden></span></button>
-    <button data-t="weekly">🏆 Weekly contest</button>
-    <button data-t="boards">Leaderboards</button>
-    <button data-t="reviews">✅ Reviews</button>
-    <button data-t="reports">🚩 Reports</button>
+  <div class="tabs" id="tabs">
+    <button data-t="today" class="on">📋 Today</button>
+    <button data-t="buys">🪙 Payments <span class="badge" id="b-buys" hidden></span></button>
+    <button data-t="rewards">🎁 Rewards <span class="badge" id="b-rewards" hidden></span></button>
+    <button data-t="reviews">✅ Reviews <span class="badge" id="b-reviews" hidden></span></button>
+    <button data-t="reports">🚩 Reports <span class="badge" id="b-reports" hidden></span></button>
+    <button data-t="players">👥 Players <span class="badge" id="b-players" hidden></span></button>
+    <button data-t="weekly">🏆 Weekly</button>
+    <button data-t="boards">📊 Leaderboards</button>
     <button data-t="ads">📣 Ads</button>
-    <button data-t="pay">💳 InstaPay</button>
-    <button id="enroll" hidden>Add a passkey</button>
-    <button id="out" style="margin-left:auto">Sign out</button>
+    <button data-t="log">🕘 Activity</button>
+    <button data-t="settings">⚙️ Settings</button>
   </div>
-  <section id="buys"><p class="sub">New payment requests appear here by themselves. Check the screenshot and your InstaPay, then approve to add the tokens.</p><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Screenshot</th><th>Reference</th><th>Paid</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="bb"></tbody></table></div></section>
-  <section id="rewards" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Email</th><th>Reward</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="rb"></tbody></table></div></section>
-  <section id="players" hidden><div class="bar"><input id="q" placeholder="Search by name or email"></div><div class="wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Tokens</th><th>Games</th><th></th></tr></thead><tbody id="ub"></tbody></table></div></section>
-  <section id="weekly" hidden><p class="sub">Thursday contest. The winner (top row) gets a ticket to any match in Egypt the week after. Email them to pick the match.</p><div class="stat" style="display:flex;flex-direction:column;gap:8px;max-width:520px;margin-bottom:14px"><b>Prize sponsor</b><small class="sub">Shown under the prize as “This week's prize by …”. Leave the name empty to hide it.</small><input id="spn" placeholder="Sponsor name (e.g. SHEHABCO)"><input id="spu" placeholder="Website link (optional, https://…)"><label class="sub">Logo (optional): <input type="file" id="spl" accept="image/*"></label><img id="spi" style="max-width:200px;max-height:60px" hidden><div style="display:flex;gap:8px"><button class="go" id="spsave">Save sponsor</button><button id="spclear">Remove logo</button></div></div><div class="bar"><select id="wk"></select></div><div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Score</th><th>Correct</th><th>Finished</th></tr></thead><tbody id="wb"></tbody></table></div></section>
-  <section id="boards" hidden><div class="bar"><select id="mode"><option>mixed</option><option>easy</option><option>medium</option><option>hard</option><option>daily</option></select></div><div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Correct</th><th>When</th><th></th></tr></thead><tbody id="sb"></tbody></table></div></section>
-  <section id="reviews" hidden><p class="sub">Finished games waiting for you. Confirmed results count in the weekly and monthly Seasons; until then players see “Awaiting review”. You can change the points before confirming.</p><div class="bar"><select id="rvf"><option value="pending">Waiting</option><option value="all">All</option></select><button class="go" id="rvall">Confirm all waiting</button></div><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Game</th><th>Right</th><th>Points</th><th>Status</th><th></th></tr></thead><tbody id="rvb"></tbody></table></div></section>
-  <section id="reports" hidden><p class="sub">Private reports from players: 🚩 a wrong answer in the quiz, or 🚨 a player suspected of cheating. Players never see who reported them.</p><div class="wrap"><table><thead><tr><th>When</th><th>From</th><th>Type</th><th>About</th><th>Reason</th><th>Details</th><th>Status</th><th></th></tr></thead><tbody id="repb"></tbody></table></div></section>
-  <section id="ads" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Business</th><th>Text</th><th>Package</th><th>Reference</th><th>Contact</th><th>Status</th><th></th></tr></thead><tbody id="ab"></tbody></table></div></section>
-  <section id="pay" hidden><div class="stat" style="display:flex;flex-direction:column;gap:10px;max-width:520px">
-    <label>InstaPay address or link<br><input id="ipa" style="width:100%"></label>
-    <label>Ad price, 1 week (EGP)<br><input id="wp" type="number" min="1"></label>
-    <label>Ad price, 1 month (EGP)<br><input id="mp" type="number" min="1"></label>
-    <button class="go" id="savepay">Save</button></div></section>
+
+  <section id="today"></section>
+
+  <section id="buys" hidden>
+    <p class="sub">Check the screenshot against your InstaPay, then approve to add the tokens. Tick several to handle them together.</p>
+    <div class="bar"><select id="buysF"><option value="pending">Waiting</option><option value="recent">Last 30 days</option></select></div>
+    <div class="bulk row" id="buysBulk" hidden><b id="buysN"></b><button class="go" data-bulk="bok">Paid – add tokens</button><button class="del" data-bulk="bno">Not paid</button><button data-bulk="clear">Clear</button></div>
+    <div class="wrap" id="buysT"></div>
+  </section>
+
+  <section id="rewards" hidden>
+    <div class="bar"><select id="rewardsF"><option value="pending">Waiting</option><option value="recent">Last 30 days</option></select></div>
+    <div class="bulk row" id="rewardsBulk" hidden><b id="rewardsN"></b><button class="go" data-bulk="rok">Approve &amp; take tokens</button><button class="del" data-bulk="rno">Decline</button><button data-bulk="clear">Clear</button></div>
+    <div class="wrap" id="rewardsT"></div>
+  </section>
+
+  <section id="reviews" hidden>
+    <p class="sub">Results count in the weekly and monthly Seasons once confirmed. <b>Auto-confirm:</b> results older than 24 hours are confirmed by themselves when you open the Manager, unless the player was reported or flagged.</p>
+    <div class="bar"><select id="reviewsF"><option value="pending">Waiting</option><option value="recent">Last 7 days</option></select><button class="go" id="rvall">Confirm all waiting</button><button id="rvauto">Run auto-confirm now</button></div>
+    <div class="bulk row" id="reviewsBulk" hidden><b id="reviewsN"></b><button class="go" data-bulk="rvok">Confirm</button><button class="del" data-bulk="rvno">Don't count</button><button data-bulk="clear">Clear</button></div>
+    <div class="wrap" id="reviewsT"></div>
+  </section>
+
+  <section id="reports" hidden>
+    <div class="bar"><select id="reportsF"><option value="open">Open</option><option value="all">All (last 60 days)</option></select></div>
+    <div id="offenders"></div>
+    <h3>🚨 Cheating reports and 🤖 automatic flags</h3>
+    <div class="bulk row" id="reportsBulk" hidden><b id="reportsN"></b><button class="go" data-bulk="repok">Mark handled</button><button class="del" data-bulk="repdel">Delete</button><button data-bulk="clear">Clear</button></div>
+    <div class="wrap" id="cheatT"></div>
+    <h3>🚩 Wrong answers, grouped by question</h3>
+    <div id="answersT"></div>
+  </section>
+
+  <section id="players" hidden>
+    <div class="bar"><input type="search" id="q" placeholder="Search by name or email"><select id="playersF"><option value="all">All accounts</option><option value="new">New (7 days)</option><option value="mod">Warned or banned</option></select></div>
+    <div class="wrap" id="playersT"></div>
+  </section>
+
+  <section id="weekly" hidden>
+    <p class="sub">Thursday contest. The winner (top row) gets a ticket to any match in Egypt the week after. Email them to pick the match.</p>
+    <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:8px"><b>Prize sponsor</b><small class="sub" style="margin:0">Shown under the prize as “This week's prize by …”. Leave the name empty to hide it.</small><input id="spn" placeholder="Sponsor name (e.g. SHEHABCO)"><input id="spu" placeholder="Website link (optional, https://…)"><label class="sub">Logo (optional): <input type="file" id="spl" accept="image/*"></label><img id="spi" style="max-width:200px;max-height:60px" hidden alt="Sponsor logo"><div class="row"><button class="go" id="spsave">Save sponsor</button><button id="spclear">Remove logo</button></div></div>
+    <div class="bar"><select id="wk"></select></div><div class="wrap" id="weeklyT"></div>
+  </section>
+
+  <section id="boards" hidden>
+    <div class="bar"><select id="mode"><option>mixed</option><option>easy</option><option>medium</option><option>hard</option><option>daily</option></select></div><div class="wrap" id="boardsT"></div>
+  </section>
+
+  <section id="ads" hidden><div class="wrap" id="adsT"></div></section>
+
+  <section id="log" hidden>
+    <p class="sub">Every approval, token change, ban and fix you make, newest first. Undo puts back what was there before (if a player has changed it since, check their page after undoing).</p>
+    <div class="wrap" id="logT"></div>
+  </section>
+
+  <section id="settings" hidden>
+    <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
+      <b>Manager password</b>
+      <small class="sub" style="margin:0">Sign in with username <b>admin</b> (or your email) and this password.</small>
+      <input id="newpw" type="password" autocomplete="new-password" placeholder="New password (8+ characters)">
+      <button class="go" id="setpw">Save password</button>
+      <button id="enroll" hidden>Add a passkey (Touch ID / Face ID)</button>
+    </div>
+    <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
+      <b>InstaPay and ad prices</b>
+      <label>InstaPay address or link<br><input id="ipa" style="width:100%"></label>
+      <label>Ad price, 1 week (EGP)<br><input id="wp" type="number" min="1"></label>
+      <label>Ad price, 1 month (EGP)<br><input id="mp" type="number" min="1"></label>
+      <button class="go" id="savepay">Save</button>
+    </div>
+    <button id="out" class="del">Sign out</button>
+  </section>
 </main>
-<div id="msg"></div><div id="zoom"><img alt="Payment screenshot"></div>
+
+<div id="pp" hidden><div class="panel" id="ppBody"></div></div>
+<div id="toast"><span id="toastT"></span><button class="sm go" id="toastU" hidden>Undo</button></div>
+<div id="zoom"><img alt="Payment screenshot"></div>
 
 <script>
 const KEY='AIzaSyDXgdmAfP0lXRxt-vgZxMy1muNPqcCoucc', PROJECT='kora-w-bas', OWNER='ahmedabdelgawad11803@gmail.com';
-const DOCS=`https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
+const USERNAMES=['admin','owner','ahmedabdelgawad11803'];
+const DB=`projects/${PROJECT}/databases/(default)/documents`;
+const DOCS=`https://firestore.googleapis.com/v1/${DB}`;
 const AUTH='https://identitytoolkit.googleapis.com/v1/accounts';
-const MODES=['easy','medium','hard','mixed','daily'];
 const RW={pass:'👑 Season pass (30 days)',ticket:'🎟️ Match ticket',fancard:'🪪 Fan card',ball:'⚽ Ball',fanshirt:'👕 Fan shirt',boots:'👟 Boots',official:'🏆 Official shirt',boots_training:'👟 Training boots',boots_pro:'👟 Pro boots',shirt_training:'👕 Training T-shirt',ball_mini:'⚽ Mini ball',ball_match:'⚽ Official match ball',keychain:'🔑 Keychain',bottle:'🥤 Water bottle',scarf:'🧣 Fan scarf',cap:'🧢 Cap'};
+const PASS_EGP=50, DAY=864e5;
 const $=s=>document.querySelector(s);
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,JSON.stringify(v))}catch{}}};
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'-';
-const msg=t=>{const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(msg.t);msg.t=setTimeout(()=>m.style.display='none',3000)};
-const pill=s=>`<span class="pill ${s}">${s}</span>`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const when=t=>t?new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'–';
+const ago=t=>{if(!t)return'–';const m=Math.round((Date.now()-t)/6e4);return m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
+const pill=(s,label)=>`<span class="pill ${esc(s)}">${esc(label||s)}</span>`;
+const cairoDay=(t=Date.now())=>Math.floor((t+72e5)/DAY);
+const xpForLevel=n=>50*n*(n-1);
+const levelOf=xp=>{let l=1;while(xpForLevel(l+1)<=xp)l++;return l};
 
-// ---------- sign-in with an email link ----------
+// ---------- toast with undo ----------
+let toastTimer;function toast(text,undoId){const t=$('#toast');$('#toastT').textContent=text;$('#toastU').hidden=!undoId;$('#toastU').dataset.u=undoId||'';t.style.display='flex';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',undoId?9000:3500)}
+const msg=t=>toast(t);
+
+// ---------- sign-in ----------
 let session=store.get('kwSession');
 async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j}
 async function token(){
@@ -101,16 +199,27 @@ async function token(){
   session={...session,idToken:j.id_token,refreshToken:j.refresh_token,exp:Date.now()+j.expires_in*1000};store.set('kwSession',session);return session.idToken;
 }
 function signOut(){session=null;store.set('kwSession',null);show()}
-$('#send').onclick=async()=>{const email=$('#email').value.trim().toLowerCase();if(email!==OWNER){$('#loginmsg').textContent='Only the owner email can open the Manager.';return}
-  $('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email,continueUrl:location.origin+location.pathname+location.hash});store.set('kwEmail',email);$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
+const startSession=j=>{session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)};
+function emailFromUser(u){u=u.trim().toLowerCase();if(u.includes('@'))return u;return USERNAMES.includes(u)?OWNER:null}
+$('#pwgo').onclick=async()=>{
+  const email=emailFromUser($('#user').value),pw=$('#pass').value;
+  if(!email||email!==OWNER){$('#loginmsg').textContent='Unknown username. Use admin or the owner email.';return}
+  if(!pw){$('#loginmsg').textContent='Type your password.';return}
+  $('#pwgo').disabled=true;$('#loginmsg').textContent='Signing in…';
+  try{startSession(await post(`${AUTH}:signInWithPassword?key=${KEY}`,{email,password:pw,returnSecureToken:true}));await verifySession();$('#pass').value='';show()}
+  catch(e){$('#loginmsg').textContent=/INVALID|PASSWORD|NOT_FOUND/.test(e.message)?'Wrong username or password. If you never set one, use the link below.':/TOO_MANY/.test(e.message)?'Too many tries. Wait a few minutes or use the email link.':'Could not sign in: '+e.message}
+  finally{$('#pwgo').disabled=false}
+};
+$('#pass').onkeydown=e=>{if(e.key==='Enter')$('#pwgo').click()};
+$('#user').onkeydown=e=>{if(e.key==='Enter')$('#pass').focus()};
+$('#forgot').onclick=async()=>{try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email:OWNER});$('#loginmsg').textContent='Check your email: the link lets you choose a password. Then sign in here with admin and that password.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}};
+$('#send').onclick=async()=>{$('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email:OWNER,continueUrl:location.origin+location.pathname});$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
 async function finishLink(){
   const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
-  const email=store.get('kwEmail')||OWNER;
-  try{const j=await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email,oobCode:p.get('oobCode')});session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session)}
+  try{startSession(await post(`${AUTH}:signInWithEmailLink?key=${KEY}`,{email:OWNER,oobCode:p.get('oobCode')}))}
   catch(e){$('#loginmsg').textContent='That link expired or was already used. Ask for a new one.'}
   history.replaceState(null,'',location.pathname+location.hash);
 }
-$('#out').onclick=signOut;
 async function verifySession(){
   if(!session)return;
   const j=await post(`${AUTH}:lookup?key=${KEY}`,{idToken:await token()});
@@ -118,104 +227,275 @@ async function verifySession(){
   if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
   session.email=u.email;store.set('kwSession',session);
 }
-$('#passkey').hidden=!managerPasskeys.available;
-$('#enroll').hidden=!managerPasskeys.available;
-if(managerPasskeys.available)$('#passkeynote').textContent='Use an enrolled passkey. Your Mac may offer Touch ID or its device password. Sign-in is remembered on this browser or Dock app until you sign out or the session expires.';
-$('#passkey').onclick=async()=>{
-  $('#passkey').disabled=true;
-  try{
-    const {customToken}=await managerPasskeys.login();
-    const j=await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true});
-    session={idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
-    await verifySession();show();
-  }catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled or unavailable. Try again or use email.':e.message}
-  finally{$('#passkey').disabled=false}
-};
-$('#enroll').onclick=async()=>{
-  $('#enroll').disabled=true;
-  try{await managerPasskeys.register(await token());msg('Passkey saved. You can now sign in with it from the Dock app.')}
-  catch(e){msg(e.name==='NotAllowedError'?'Passkey setup cancelled.':e.message+' Use a new owner email link within 5 minutes.')}
-  finally{$('#enroll').disabled=false}
-};
+$('#setpw').onclick=async()=>{const pw=$('#newpw').value;if(pw.length<8)return msg('Use at least 8 characters');try{const j=await post(`${AUTH}:update?key=${KEY}`,{idToken:await token(),password:pw,returnSecureToken:true});session={...session,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session);$('#newpw').value='';msg('Password saved. Sign in with admin + this password.')}catch(e){msg(/CREDENTIAL_TOO_OLD|REQUIRES_RECENT/.test(e.message)?'For safety, sign out and in again, then set the password.':'Error: '+e.message)}};
+$('#out').onclick=signOut;
+const pk=window.managerPasskeys||{available:false};
+$('#passkey').hidden=!pk.available;$('#enroll').hidden=!pk.available;
+$('#passkey').onclick=async()=>{$('#passkey').disabled=true;try{const {customToken}=await pk.login();startSession(await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true}));await verifySession();show()}catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled.':e.message}finally{$('#passkey').disabled=false}};
+$('#enroll').onclick=async()=>{try{await pk.register(await token());msg('Passkey saved.')}catch(e){msg(e.message)}};
 
-// ---------- Firestore ----------
-const enc=v=>typeof v==='string'?{stringValue:v}:Number.isInteger(v)?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{doubleValue:v};
-const dec=v=>v.stringValue??(v.integerValue!==undefined?Number(v.integerValue):v.doubleValue??v.booleanValue??(v.mapValue?decF(v.mapValue.fields):v.arrayValue?(v.arrayValue.values||[]).map(dec):null));
+// ---------- Firestore (REST) ----------
+const enc=v=>v===null||v===undefined?{nullValue:null}:typeof v==='string'?{stringValue:v}:typeof v==='boolean'?{booleanValue:v}:typeof v==='number'?(Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v}):Array.isArray(v)?{arrayValue:{values:v.map(enc)}}:{mapValue:{fields:encF(v)}};
+const encF=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,enc(v)]));
+const dec=v=>'stringValue' in v?v.stringValue:'integerValue' in v?Number(v.integerValue):'doubleValue' in v?v.doubleValue:'booleanValue' in v?v.booleanValue:v.mapValue?decF(v.mapValue.fields):v.arrayValue?(v.arrayValue.values||[]).map(dec):null;
 const decF=(f={})=>Object.fromEntries(Object.entries(f).map(([k,v])=>[k,dec(v)]));
-async function fs(path,init={}){const r=await fetch(`${DOCS}/${path}`,{...init,headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'}});const j=await r.json().catch(()=>({}));if(r.status===404&&init.method==null)return null;if(!r.ok)throw new Error(j.error?.message||r.status);return j}
-async function list(col){const out=[];let pt='';do{const j=await fs(`${col}?pageSize=300${pt?'&pageToken='+pt:''}`);for(const d of j?.documents||[])out.push({id:d.name.split('/').pop(),...decF(d.fields)});pt=j?.nextPageToken||''}while(pt);return out}
-async function get(path){const d=await fs(path);return d?{id:d.name.split('/').pop(),...decF(d.fields)}:null}
-const patch=(path,data)=>fs(`${path}?${Object.keys(data).map(k=>'updateMask.fieldPaths='+k).join('&')}`,{method:'PATCH',body:JSON.stringify({fields:Object.fromEntries(Object.entries(data).map(([k,v])=>[k,enc(v)]))})});
-const create=(col,id,data)=>fs(`${col}?documentId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({fields:Object.fromEntries(Object.entries(data).map(([k,v])=>[k,enc(v)]))})});
-const del=path=>fs(path,{method:'DELETE'});
+let reads=0;
+async function fs(path,init={}){const r=await fetch(`${DOCS}${path}`,{...init,headers:{Authorization:'Bearer '+await token(),'Content-Type':'application/json'}});const j=await r.json().catch(()=>({}));if(r.status===404&&!init.method)return null;if(!r.ok)throw new Error(j.error?.message||r.status);return j}
+const docOf=d=>({id:d.name.split('/').pop(),...decF(d.fields)});
+async function get(path){reads++;const d=await fs('/'+path);return d?docOf(d):null}
+const patch=(path,data)=>fs(`/${path}?${Object.keys(data).map(k=>'updateMask.fieldPaths='+encodeURIComponent(k)).join('&')}`,{method:'PATCH',body:JSON.stringify({fields:encF(data)})});
+const create=(col,id,data)=>fs(`/${col}${id?'?documentId='+encodeURIComponent(id):''}`,{method:'POST',body:JSON.stringify({fields:encF(data)})}).then(d=>d.name.split('/').pop());
+const del=path=>fs('/'+path,{method:'DELETE'});
+const OPS={'==':'EQUAL','>=':'GREATER_THAN_OR_EQUAL','<':'LESS_THAN','>':'GREATER_THAN','<=':'LESS_THAN_OR_EQUAL'};
+const whereOf=w=>!w.length?undefined:w.length===1?{fieldFilter:{field:{fieldPath:w[0][0]},op:OPS[w[0][1]],value:enc(w[0][2])}}:{compositeFilter:{op:'AND',filters:w.map(x=>whereOf([x]))}};
+/** Only the matching documents (never the whole collection). */
+async function query(col,where=[],limit=300,select){const q={from:[{collectionId:col}],where:whereOf(where),limit};if(select)q.select={fields:select.map(f=>({fieldPath:f}))};const rows=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:q})});const out=rows.filter(r=>r.document).map(r=>docOf(r.document));reads+=Math.max(1,out.length);return out}
+/** Count / sum on the server: 1 read per 1000 documents instead of reading them all. */
+async function agg(col,where,kind='count',field){const a=kind==='count'?{alias:'v',count:{}}:{alias:'v',sum:{field:{fieldPath:field}}};const r=await fs(':runAggregationQuery',{method:'POST',body:JSON.stringify({structuredAggregationQuery:{structuredQuery:{from:[{collectionId:col}],where:whereOf(where||[])},aggregations:[a]}})});reads++;const v=r?.[0]?.result?.aggregateFields?.v;return v?dec(v)||0:0}
+async function getMany(paths){paths=[...new Set(paths)];if(!paths.length)return{};const out={};for(let i=0;i<paths.length;i+=100){const r=await fs(':batchGet',{method:'POST',body:JSON.stringify({documents:paths.slice(i,i+100).map(p=>`${DB}/${p}`)})});for(const x of r){reads++;if(x.found)out[x.found.name.split('/documents/')[1]]=docOf(x.found)}}return out}
 
-// ---------- data + views ----------
-let D={users:[],wallets:[],buys:[],rewards:[],tab:'buys'};
-const emailOf=uid=>D.users.find(u=>u.id===uid)?.email??'';
-async function load(){
-  const [users,wallets,buys,rewards]=await Promise.all([list('users'),list('wallets'),list('tokenPurchases'),list('rewardRequests')]);
-  const order=x=>x.status==='pending'?0:1;
-  Object.assign(D,{users,wallets,buys:buys.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt),rewards:rewards.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt)});
-  const nb=buys.filter(b=>b.status==='pending').length,nr=rewards.filter(r=>r.status==='pending').length;
-  const nn=users.filter(u=>(u.createdAt||0)>=Date.now()-7*864e5).length;$('#nn').hidden=!nn;$('#nn').textContent=nn;
-  $('#nb').hidden=!nb;$('#nb').textContent=nb;$('#nr').hidden=!nr;$('#nr').textContent=nr;
-  document.title=(nb+nr?`(${nb+nr}) `:'')+'Kaweera Manager';
-  const tokens=wallets.reduce((s,w)=>s+(w.tokens||0),0),egp=buys.filter(b=>b.status==='approved').reduce((s,b)=>s+(b.egp||0),0);
-  $('#stats').innerHTML=[['Players',users.length],['Payments waiting',nb],['Reward requests waiting',nr],['Tokens held by players',tokens.toLocaleString()],['EGP from tokens',egp]].map(([k,v])=>`<div class="stat"><b>${v}</b><small>${k}</small></div>`).join('');
-  render();
+// ---------- cache: keep what we have, refetch only when stale ----------
+const cache={};
+async function cached(key,ms,fn){const c=cache[key];if(c&&Date.now()-c.at<ms)return c.v;const v=await fn();cache[key]={at:Date.now(),v};return v}
+const drop=(...keys)=>keys.forEach(k=>Object.keys(cache).forEach(c=>{if(c===k||c.startsWith(k+':'))delete cache[c]}));
+const users={};
+async function loadUsers(uids){const need=[...new Set(uids)].filter(u=>u&&!(u in users));if(!need.length)return;const got=await getMany(need.map(u=>'users/'+u));for(const u of need)users[u]=got['users/'+u]||{name:'?',email:''}}
+const who=(uid,name)=>`<button class="lnk" data-player="${esc(uid)}">${esc(name||users[uid]?.name||'player')}</button><br><small class="sub">${esc(users[uid]?.email||'')}</small>`;
+
+// ---------- activity log + undo ----------
+/** Runs an action through a recorder so it can be logged and undone. */
+async function act(label,fn){
+  const ops=[];
+  const tx={
+    patch:async(path,data)=>{const old=await get(path);ops.push(old?{t:'patch',path,data:Object.fromEntries(Object.keys(data).map(k=>[k,old[k]??null]))}:{t:'del',path});await patch(path,data)},
+    create:async(col,id,data)=>{const nid=await create(col,id,data);ops.push({t:'del',path:col+'/'+nid});return nid},
+    del:async(path)=>{const old=await get(path);await del(path);if(old){const {id,...f}=old;ops.push({t:'create',path,data:f})}},
+  };
+  const result=await fn(tx);
+  let logId='';
+  if(ops.length)logId=await create('adminLog','',{at:Date.now(),label,undo:JSON.stringify(ops.reverse()),undone:false}).catch(()=>'');
+  drop('log');toast(label,logId);
+  return result;
 }
+async function undo(id){const e=await get('adminLog/'+id);if(!e||e.undone)return msg('Already undone');for(const op of JSON.parse(e.undo)){const [col,...rest]=op.path.split('/');if(op.t==='patch')await patch(op.path,op.data);else if(op.t==='del')await del(op.path).catch(()=>{});else await create(col,rest.join('/'),op.data).catch(()=>patch(op.path,op.data))}await patch('adminLog/'+id,{undone:true});drop('buys','rewards','reviews','reports','players','log','counts','stats');toast('Undone: '+e.label);refresh()}
+
+// Two-step for risky buttons: first tap arms, second does it.
+let armed=null;function arm(b,fn){if(armed===b){armed=null;b.textContent=b.dataset.l;b.disabled=true;Promise.resolve().then(fn).catch(e=>msg('Error: '+e.message)).finally(()=>{b.disabled=false});return}if(armed)armed.textContent=armed.dataset.l;b.dataset.l=b.textContent;b.textContent='Sure?';armed=b;setTimeout(()=>{if(armed===b){b.textContent=b.dataset.l;armed=null}},3000)}
+
+// ---------- tables ----------
+/** cols: [[label, cell(row) => html, className?]]; checks: name of the selection set. */
+function table(cols,rows,empty,opt={}){
+  if(!rows.length)return`<div class="empty">${empty}</div>`;
+  const sel=opt.sel?SEL[opt.sel]:null;
+  const head=(sel?'<th></th>':'')+cols.map(c=>`<th>${c[0]}</th>`).join('');
+  const body=rows.map(r=>`<tr class="${sel&&sel.has(r.id)?'sel':''} ${opt.flag&&opt.flag(r)?'flag':''}">${sel?`<td data-l="Select"><input type="checkbox" class="chk" data-sel="${opt.sel}" data-i="${esc(r.id)}"${sel.has(r.id)?' checked':''}${opt.canSel&&!opt.canSel(r)?' disabled':''}></td>`:''}${cols.map(c=>`<td${c[0]?` data-l="${c[0]}"`:''} class="${c[2]||''}">${c[1](r)}</td>`).join('')}</tr>`).join('');
+  return`<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+const SEL={buys:new Set(),rewards:new Set(),reviews:new Set(),reports:new Set()};
+function bulkBar(k){const n=SEL[k].size;$('#'+k+'Bulk').hidden=!n;$('#'+k+'N').textContent=n+' selected'}
+
+// ---------- counts for badges (server-side counts, cheap) ----------
+async function counts(){return cached('counts',45e3,async()=>{const since=Date.now()-DAY;const [buys,rewards,reviews,reports,newUsers,auto]=await Promise.all([agg('tokenPurchases',[['status','==','pending']]),agg('rewardRequests',[['status','==','pending']]),agg('submissions',[['status','==','pending']]),agg('reports',[['status','==','open']]),agg('users',[['createdAt','>=',since]]),agg('reports',[['kind','==','auto'],['status','==','open']])]);return{buys,rewards,reviews,reports,players:newUsers,auto}})}
+async function badges(){const c=await counts();for(const k of ['buys','rewards','reviews','reports','players']){const b=$('#b-'+k);b.hidden=!c[k];b.textContent=c[k]}const n=c.buys+c.rewards;document.title=(n?`(${n}) `:'')+'Kaweera Manager';return c}
+
+// ---------- TODAY ----------
+async function today(){
+  const c=await badges();
+  const day=cairoDay(),thursday=day%7===0;
+  const todo=[['buys','🪙','Payments to check',c.buys],['rewards','🎁','Rewards to approve',c.rewards],['reviews','✅','Results waiting',c.reviews],['reports','🚩','Open reports',c.reports,c.auto?`${c.auto} 🤖 automatic flags`:''],['players','🆕','New accounts (24 h)',c.players]];
+  let h=`<div class="grid">${todo.map(([t,i,l,n,extra])=>`<div class="stat todo ${n?'hot':''}" data-go="${t}"><b>${i} ${n}</b><small>${l}${extra?`<br><span style="color:var(--red)">${extra}</span>`:''}</small></div>`).join('')}<div class="stat"><b>${thursday?'🏆 Today':'🗓 '+(7-day%7)+' d'}</b><small>${thursday?'Thursday contest is live':'until the Thursday contest'}</small></div></div>`;
+  h+=`<h2>Numbers at a glance</h2><div id="statsBox"><div class="empty">Loading…</div></div>`;
+  $('#today').innerHTML=h;
+  stats().then(s=>{$('#statsBox').innerHTML=s}).catch(e=>{$('#statsBox').innerHTML=`<div class="empty">${esc(e.message)}</div>`});
+  cached('autoRun',10*6e4,()=>autoConfirm(true)).catch(()=>{});
+}
+async function stats(){return cached('stats',10*6e4,async()=>{
+  const now=Date.now(),d0=(cairoDay(now)-6)*DAY-72e5;
+  const dayStarts=[...Array(7)].map((_,i)=>d0+i*DAY);
+  const month=new Date();month.setDate(1);month.setHours(0,0,0,0);
+  const [perDay,games,held,spent,buys,passes,players]=await Promise.all([
+    Promise.all(dayStarts.map(s=>agg('users',[['createdAt','>=',s],['createdAt','<',s+DAY]]))),
+    query('submissions',[['createdAt','>=',now-7*DAY]],3000,['mode']),
+    agg('wallets',[],'sum','tokens'),agg('wallets',[],'sum','spent'),
+    query('tokenPurchases',[['createdAt','>=',month.getTime()]],1000,['status','egp']),
+    agg('rewardRequests',[['item','==','pass'],['status','==','approved']]),
+    agg('users',[]),
+  ]);
+  const max=Math.max(1,...perDay);const modes={};for(const g of games)modes[g.mode]=(modes[g.mode]||0)+1;
+  const egp=buys.filter(b=>b.status==='approved').reduce((s,b)=>s+(b.egp||0),0);
+  const label=s=>new Date(s+72e5).toLocaleDateString([], {weekday:'short'});
+  return `<div class="grid">
+    <div class="stat"><b>${players.toLocaleString()}</b><small>Players · new per day (7 days)</small><div class="spark" title="${perDay.map((n,i)=>label(dayStarts[i])+': '+n).join(', ')}">${perDay.map(n=>`<i style="height:${Math.round(n/max*100)}%"></i>`).join('')}</div><small>${perDay.join(' · ')}</small></div>
+    <div class="stat"><b>${games.length}</b><small>Games by signed-in players (7 days)</small><br><small>${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`${esc(m)} ${n}`).join(' · ')||'–'}</small></div>
+    <div class="stat"><b>${(held+spent).toLocaleString()}</b><small>Tokens earned + bought (all time)</small><br><small>${spent.toLocaleString()} spent on rewards · ${held.toLocaleString()} held</small></div>
+    <div class="stat"><b>${egp.toLocaleString()} EGP</b><small>InstaPay in this month (approved)</small></div>
+    <div class="stat"><b>${(passes*PASS_EGP).toLocaleString()} EGP</b><small>Season passes sold: ${passes} (×${PASS_EGP} EGP of tokens)</small></div>
+  </div>`;})}
+
+// ---------- PAYMENTS ----------
 const proofs={};
-async function loadProof(id){if(id in proofs)return;proofs[id]='';const p=await get('paymentProofs/'+id).catch(()=>null);proofs[id]=p?.image||'none';const el=document.querySelector(`[data-proof="${id}"]`);if(el)el.outerHTML=proofCell(id)}
-const proofCell=id=>proofs[id]&&proofs[id]!=='none'?`<img class="thumb" data-z="${id}" src="${proofs[id]}" alt="screenshot">`:`<span data-proof="${id}" class="sub" style="margin:0">${proofs[id]==='none'?'none':'loading…'}</span>`;
-function render(){
-  const t=D.tab;
-  if(t==='buys'){$('#bb').innerHTML=D.buys.length?D.buys.map(b=>`<tr><td>${when(b.createdAt)}</td><td>${esc(b.name)}<br><small class="sub">${esc(emailOf(b.uid))}</small></td><td>${proofCell(b.id)}</td><td><b>${esc(b.ref)}</b></td><td>${b.egp} EGP</td><td>${b.tokens}</td><td>${pill(b.status)}</td><td class="act">${b.status==='pending'?`<button class="sm go" data-a="bok" data-i="${b.id}">Paid – add tokens</button><button class="sm del" data-a="bno" data-i="${b.id}">Not paid</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No payment requests yet.</td></tr>';D.buys.forEach(b=>loadProof(b.id))}
-  if(t==='rewards')$('#rb').innerHTML=D.rewards.length?D.rewards.map(r=>`<tr><td>${when(r.createdAt)}</td><td>${esc(r.name)}</td><td>${esc(emailOf(r.uid))}</td><td>${RW[r.item]||esc(r.item)}</td><td>${(r.tokens||0).toLocaleString()}</td><td>${pill(r.status)}</td><td class="act">${r.status==='pending'?`<button class="sm go" data-a="rok" data-i="${r.id}">Approve &amp; take tokens</button><button class="sm del" data-a="rno" data-i="${r.id}">Decline</button>`:''}</td></tr>`).join(''):'<tr><td colspan=7 class="empty">No reward requests yet.</td></tr>';
-  if(t==='players'){const q=$('#q').value.toLowerCase();const w=Object.fromEntries(D.wallets.map(x=>[x.id,x]));const since=Date.now()-7*864e5;const rows=D.users.filter(u=>(!D.onlyNew||(u.createdAt||0)>=since)&&(u.name+' '+u.email).toLowerCase().includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
-    $('#ub').innerHTML=rows.length?rows.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${when(u.createdAt)}</td><td>${(w[u.id]?.tokens||0).toLocaleString()}</td><td>${w[u.id]?.games||0}</td><td class="act"><input type="number" min="1" step="1" placeholder="Tokens" id="tk-${u.id}" style="width:80px"><button class="sm go" data-a="give" data-i="${u.id}" data-n="${esc(u.name)}">Add tokens</button><button class="sm" data-a="reset" data-e="${esc(u.email)}">Send password reset email</button></td></tr>`).join(''):`<tr><td colspan=6 class="empty">${D.onlyNew?'No new accounts in the last 7 days.':'No players yet.'}</td></tr>`}
-}
-async function sponsor(){const p=await get('config/weeklySponsor');$('#spn').value=p?.name||'';$('#spu').value=p?.url||'';D.logo=p?.logo||'';$('#spi').src=D.logo;$('#spi').hidden=!D.logo}
-async function weekly(){sponsor().catch(e=>msg('Error: '+e.message));const all=await list('weeklyEntries');const day=Math.floor((Date.now()+7200000)/864e5);const thu=day-day%7;const weeks=[...new Set([String(thu),...all.map(e=>e.week)])].sort((a,b)=>b-a);const sel=$('#wk');const cur=sel.value||String(thu);sel.innerHTML=weeks.map(w=>`<option value="${w}"${w===cur?' selected':''}>Thursday ${new Date(w*864e5-72e5+432e5).toLocaleDateString()}${w===String(thu)&&day%7===0?' (today)':''}</option>`).join('');
-  const rows=all.filter(e=>e.week===sel.value&&e.status==='done').sort((a,b)=>b.score-a.score||b.correct-a.correct||(a.finishedAt||0)-(b.finishedAt||0));const playing=all.filter(e=>e.week===sel.value&&e.status!=='done').length;
-  $('#wb').innerHTML=(rows.length?rows.map((e,i)=>`<tr${i===0?' style="background:rgba(242,193,46,.15)"':''}><td>${i===0?'🥇 Winner':i+1}</td><td>${esc(e.name)}</td><td>${esc(emailOf(e.uid))}</td><td><b>${e.score}</b></td><td>${e.correct}</td><td>${when(e.finishedAt)}</td></tr>`).join(''):'<tr><td colspan=6 class="empty">No one has finished this contest.</td></tr>')+(playing?`<tr><td colspan=6 class="sub">${playing} started but didn't finish.</td></tr>`:'')}
-async function boards(){const rows=(await list('leaderboard_'+$('#mode').value)).sort((a,b)=>b.score-a.score).slice(0,200);$('#sb').innerHTML=rows.length?rows.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${s.score}</td><td>${s.correct}</td><td>${when(s.date)}</td><td><button class="sm del" data-a="ds" data-i="${s.id}">Remove</button></td></tr>`).join(''):'<tr><td colspan=6 class="empty">No scores yet.</td></tr>'}
-async function ads(){const [a,c]=await Promise.all([list('ads'),list('adContacts')]);const cm=Object.fromEntries(c.map(x=>[x.id,x]));const o={pending:0,approved:1};
-  $('#ab').innerHTML=a.length?a.sort((x,y)=>(o[x.status]??9)-(o[y.status]??9)||(y.createdAt||0)-(x.createdAt||0)).map(x=>`<tr><td>${when(x.createdAt)}</td><td>${esc(x.business)}</td><td style="white-space:normal;min-width:180px">${esc(x.text)}</td><td>${esc(x.package)}</td><td><b>${esc(cm[x.id]?.payRef||'—')}</b></td><td>${esc(cm[x.id]?.contact||'')}</td><td>${pill(x.status)}</td><td class="act">${x.status==='pending'?`<button class="sm go" data-a="adok" data-i="${x.id}">Paid – approve</button><button class="sm del" data-a="adno" data-i="${x.id}">Reject</button>`:x.status==='approved'?`<button class="sm" data-a="adend" data-i="${x.id}">End ad</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No ads yet.</td></tr>'}
-async function reviews(){const f=$('#rvf').value;const rows=(await list('submissions')).filter(x=>f==='all'||x.status==='pending').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,300);D.rv=rows;
-  $('#rvb').innerHTML=rows.length?rows.map(x=>{const a=x.answers||[];const ok=a.filter(y=>y.correct).length;return `<tr><td>${when(x.createdAt)}</td><td>${esc(x.name)}<br><small class="sub">${esc(emailOf(x.uid))}</small></td><td>${esc(x.mode)}<br><small class="sub">${esc(x.contest)}</small></td><td>${ok}/${a.length}</td><td><input type="number" step="1" id="pt-${x.id}" value="${x.points}" style="width:70px"></td><td>${pill(x.status==='reviewed'?'approved':x.status)}</td><td class="act">${x.status==='pending'?`<button class="sm go" data-a="rvok" data-i="${x.id}">Confirm</button><button class="sm del" data-a="rvno" data-i="${x.id}">Don't count</button>`:`<button class="sm" data-a="rvback" data-i="${x.id}">Back to waiting</button>`}</td></tr>`}).join(''):'<tr><td colspan=7 class="empty">Nothing waiting for review.</td></tr>'}
-async function reports(){const o={open:0};const rows=(await list('reports')).sort((a,b)=>(o[a.status]??9)-(o[b.status]??9)||(b.createdAt||0)-(a.createdAt||0));
-  $('#repb').innerHTML=rows.length?rows.map(x=>`<tr><td>${when(x.createdAt)}</td><td>${esc(x.name)}<br><small class="sub">${esc(emailOf(x.uid))}</small></td><td>${x.kind==='player'?'🚨 Cheating':x.kind==='auto'?'🤖 Auto flag':'🚩 Wrong answer'}</td><td><b>${esc(x.username||'')}</b></td><td style="white-space:normal;min-width:200px">${esc(x.reason)}</td><td style="white-space:normal;min-width:200px"><small>${esc(x.context)}</small></td><td>${pill(x.status==='open'?'pending':'approved')}</td><td class="act">${x.status==='open'?`<button class="sm go" data-a="repok" data-i="${x.id}">Mark handled</button>`:''}<button class="sm del" data-a="repdel" data-i="${x.id}">Delete</button></td></tr>`).join(''):'<tr><td colspan=8 class="empty">No reports.</td></tr>'}
-async function pay(){const p=await get('config/payments');$('#ipa').value=p?.instapay||'';$('#wp').value=p?.weekPrice||'';$('#mp').value=p?.monthPrice||''}
+async function loadProof(id){if(id in proofs)return;proofs[id]='';const p=await get('paymentProofs/'+id).catch(()=>null);proofs[id]=p?.image||'none';const el=document.querySelector(`[data-proof="${CSS.escape(id)}"]`);if(el)el.outerHTML=proofCell(id)}
+const proofCell=id=>proofs[id]&&proofs[id]!=='none'?`<img class="thumb" data-z="${esc(id)}" src="${proofs[id]}" alt="screenshot">`:`<span data-proof="${esc(id)}" class="sub" style="margin:0">${proofs[id]==='none'?'none':'loading…'}</span>`;
+const recent=(col,days,f)=>f==='pending'?query(col,[['status','==','pending']]):query(col,[['createdAt','>=',Date.now()-days*DAY]],500);
+const byNew=rows=>rows.sort((a,b)=>(a.status==='pending'?0:1)-(b.status==='pending'?0:1)||(b.createdAt||0)-(a.createdAt||0));
+async function buys(){const f=$('#buysF').value;const rows=byNew(await cached('buys:'+f,25e3,()=>recent('tokenPurchases',30,f)));await loadUsers(rows.map(r=>r.uid));D.buys=rows;
+  $('#buysT').innerHTML=table([['When',r=>ago(r.createdAt)],['Player',r=>who(r.uid,r.name)],['Screenshot',r=>proofCell(r.id)],['Reference',r=>`<b>${esc(r.ref)}</b>`],['Paid',r=>`${r.egp} EGP → ${r.tokens} tokens`],['Status',r=>pill(r.status)],['',r=>r.status==='pending'?`<button class="sm go" data-a="bok" data-i="${esc(r.id)}">Paid – add tokens</button><button class="sm del" data-a="bno" data-i="${esc(r.id)}">Not paid</button>`:'','act']],rows,f==='pending'?'Nothing waiting. 🎉':'No payments in the last 30 days.',{sel:'buys',canSel:r=>r.status==='pending'});
+  rows.forEach(r=>loadProof(r.id));bulkBar('buys')}
+async function addTokens(tx,uid,n){const w=await get('wallets/'+uid);if(w)await tx.patch('wallets/'+uid,{tokens:(w.tokens||0)+n,updatedAt:Date.now()});else await tx.create('wallets',uid,{tokens:n,games:0,spent:0,updatedAt:Date.now()})}
+const approveBuy=(tx,id)=>get('tokenPurchases/'+id).then(async r=>{if(r?.status!=='pending')throw new Error('already handled');await addTokens(tx,r.uid,r.tokens);await tx.patch('tokenPurchases/'+id,{status:'approved'});return r});
 
-// Two-step buttons: the first click arms, the second does it.
-let armed=null;function arm(b,fn){if(armed===b){armed=null;b.disabled=true;fn().catch(e=>msg('Error: '+e.message)).finally(()=>{b.disabled=false});return}if(armed)armed.textContent=armed.dataset.l;b.dataset.l=b.textContent;b.textContent='Sure?';armed=b;setTimeout(()=>{if(armed===b){b.textContent=b.dataset.l;armed=null}},3000)}
-async function addTokens(uid,n){const w=await get('wallets/'+uid);if(w)await patch('wallets/'+uid,{tokens:(w.tokens||0)+n,updatedAt:Date.now()});else await create('wallets',uid,{tokens:n,games:0,spent:0,updatedAt:Date.now()})}
-document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]');if(z){$('#zoom img').src=proofs[z.dataset.z];$('#zoom').style.display='flex';return}if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
+// ---------- REWARDS ----------
+async function rewards(){const f=$('#rewardsF').value;const rows=byNew(await cached('rewards:'+f,25e3,()=>recent('rewardRequests',30,f)));await loadUsers(rows.map(r=>r.uid));
+  $('#rewardsT').innerHTML=table([['When',r=>ago(r.createdAt)],['Player',r=>who(r.uid,r.name)],['Reward',r=>RW[r.item]||esc(r.item)],['Tokens',r=>(r.tokens||0).toLocaleString()],['Status',r=>pill(r.status)],['',r=>r.status==='pending'?`<button class="sm go" data-a="rok" data-i="${esc(r.id)}">Approve &amp; take tokens</button><button class="sm del" data-a="rno" data-i="${esc(r.id)}">Decline</button>`:'','act']],rows,f==='pending'?'Nothing waiting. 🎉':'No reward requests in the last 30 days.',{sel:'rewards',canSel:r=>r.status==='pending'});bulkBar('rewards')}
+async function givePass(tx,uid,days){const p=await get('passes/'+uid);const until=Math.max(Date.now(),p?.until||0)+days*DAY;if(p)await tx.patch('passes/'+uid,{until});else await tx.create('passes',uid,{until});return until}
+const approveReward=(tx,id)=>get('rewardRequests/'+id).then(async r=>{if(r?.status!=='pending')throw new Error('already handled');const w=await get('wallets/'+r.uid);if(!w||w.tokens<r.tokens)throw new Error(`${r.name}: not enough tokens (has ${w?.tokens??0})`);await tx.patch('wallets/'+r.uid,{tokens:w.tokens-r.tokens,spent:(w.spent||0)+r.tokens,updatedAt:Date.now()});await tx.patch('rewardRequests/'+id,{status:'approved'});if(r.item==='pass')await givePass(tx,r.uid,30);return r});
+
+// ---------- REVIEWS ----------
+async function flaggedUids(){const open=await query('reports',[['status','==','open']],500);const ids=new Set(open.filter(r=>r.kind==='auto').map(r=>r.uid));const names=new Set(open.filter(r=>r.kind==='player').map(r=>(r.username||'').trim().toLowerCase()));return{ids,names}}
+/** Confirms results older than 24 h unless the player is reported or flagged. */
+async function autoConfirm(quiet){const old=(await query('submissions',[['status','==','pending']],500)).filter(x=>(x.createdAt||0)<Date.now()-DAY);if(!old.length){if(!quiet)msg('Nothing older than 24 hours to confirm');return 0}
+  const f=await flaggedUids();const ok=old.filter(x=>!f.ids.has(x.uid)&&!f.names.has((x.name||'').toLowerCase()));const held=old.length-ok.length;
+  if(ok.length)await act(`Auto-confirmed ${ok.length} result${ok.length>1?'s':''}${held?` (${held} held: reported/flagged)`:''}`,async tx=>{for(const x of ok)await tx.patch('submissions/'+x.id,{status:'reviewed',reviewedAt:Date.now()})});
+  else if(!quiet)msg(`${held} result(s) held because the player was reported or flagged`);
+  drop('reviews','counts');if(D.tab==='reviews')reviews();return ok.length}
+async function reviews(){const f=$('#reviewsF').value;const rows=(await cached('reviews:'+f,25e3,()=>f==='pending'?query('submissions',[['status','==','pending']],500):query('submissions',[['createdAt','>=',Date.now()-7*DAY]],500))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));D.rv=rows;const fl=await cached('flags',6e4,flaggedUids);await loadUsers(rows.map(r=>r.uid));
+  const isFlag=x=>fl.ids.has(x.uid)||fl.names.has((x.name||'').toLowerCase());
+  $('#reviewsT').innerHTML=table([['When',r=>ago(r.createdAt)],['Player',r=>who(r.uid,r.name)+(isFlag(r)?' <span class="pill banned">reported</span>':'')],['Game',r=>`${esc(r.mode)}<br><small class="sub">${esc((r.contest||'').slice(0,40))}</small>`],['Right',r=>{const a=r.answers||[];return`${a.filter(y=>y.correct).length}/${a.length}`}],['Points',r=>`<input type="number" step="1" id="pt-${esc(r.id)}" value="${r.points}" style="width:72px">`],['Status',r=>pill(r.status)],['',r=>r.status==='pending'?`<button class="sm go" data-a="rvok" data-i="${esc(r.id)}">Confirm</button><button class="sm del" data-a="rvno" data-i="${esc(r.id)}">Don't count</button>`:`<button class="sm" data-a="rvback" data-i="${esc(r.id)}">Back to waiting</button>`,'act']],rows,f==='pending'?'Nothing waiting for review. 🎉':'No results in the last 7 days.',{sel:'reviews',canSel:r=>r.status==='pending',flag:isFlag});bulkBar('reviews')}
+
+// ---------- REPORTS ----------
+async function aboutUid(r){if(r.kind==='auto')return r.uid;const n=(r.username||'').trim().toLowerCase();if(!n)return'';const k='un:'+n;if(cache[k])return cache[k].v;const d=await get('usernames/'+encodeURIComponent(n)).catch(()=>null);cache[k]={at:Date.now(),v:d?.uid||''};return d?.uid||''}
+async function reports(){const f=$('#reportsF').value;const rows=(await cached('reports:'+f,25e3,()=>f==='open'?query('reports',[['status','==','open']],500):query('reports',[['createdAt','>=',Date.now()-60*DAY]],1000))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const cheat=rows.filter(r=>r.kind!=='answer');for(const r of cheat)r.about=await aboutUid(r);await loadUsers([...rows.map(r=>r.uid),...cheat.map(r=>r.about)]);
+  // Repeat offenders: two or more cheating reports or flags in the last 60 days.
+  const all=await cached('reports:all',6e4,()=>query('reports',[['createdAt','>=',Date.now()-60*DAY]],1000));const tally={};for(const r of all.filter(r=>r.kind!=='answer')){const k=r.kind==='auto'?r.uid:'@'+(r.username||'').toLowerCase();tally[k]=tally[k]||{n:0,auto:0,label:r.kind==='auto'?r.name:r.username,uid:r.kind==='auto'?r.uid:''};tally[k].n++;if(r.kind==='auto')tally[k].auto++}
+  const rep=Object.values(tally).filter(t=>t.n>=2).sort((a,b)=>b.n-a.n);
+  $('#offenders').innerHTML=rep.length?`<div class="card"><b>⚠️ Repeat offenders (60 days)</b><div class="row" style="margin-top:6px">${rep.map(t=>t.uid?`<button class="sm warn" data-player="${esc(t.uid)}">${esc(t.label)} · ${t.n}${t.auto?` (🤖${t.auto})`:''}</button>`:`<span class="pill warned">${esc(t.label)} · ${t.n}</span>`).join('')}</div></div>`:'';
+  const modBtns=r=>r.about?`<button class="sm warn" data-a="warn" data-u="${esc(r.about)}" data-i="${esc(r.id)}">Warn</button><button class="sm del" data-a="ban" data-u="${esc(r.about)}" data-i="${esc(r.id)}">Ban</button><button class="sm" data-a="unseason" data-u="${esc(r.about)}">Remove results</button>`:'<small class="sub">player not found</small>';
+  $('#cheatT').innerHTML=table([['When',r=>ago(r.createdAt)],['Type',r=>r.kind==='auto'?'🤖 Auto flag':'🚨 Cheating'],['About',r=>r.about?who(r.about,users[r.about]?.name||r.username):`<b>${esc(r.username)}</b>`],['From',r=>r.kind==='auto'?'<small class="sub">system</small>':who(r.uid,r.name)],['Reason',r=>`${esc(r.reason)}<br><small class="sub">${esc(r.context)}</small>`,'wide'],['Status',r=>pill(r.status)],['',r=>(r.status==='open'?modBtns(r)+`<button class="sm go" data-a="repok" data-i="${esc(r.id)}">Handled</button>`:'')+`<button class="sm del" data-a="repdel" data-i="${esc(r.id)}">Delete</button>`,'act']],cheat,'No cheating reports. 👍',{sel:'reports',flag:r=>r.kind==='auto'});
+  // Wrong answers grouped by question.
+  const groups={};for(const r of rows.filter(r=>r.kind==='answer')){const parts=(r.context||'').split(' · ');const aid=parts[0]||'?';const qid=aid.split(':').pop();(groups[qid]=groups[qid]||{qid,aid,text:parts[1]||'',your:parts[2]||'',right:parts[3]||'',list:[]}).list.push(r)}
+  const gs=Object.values(groups).sort((a,b)=>b.list.length-a.list.length);const fixes=await cached('fixes',6e4,()=>query('questionFixes',[],1000));const fx=Object.fromEntries(fixes.map(f=>[f.id,f]));
+  $('#answersT').innerHTML=gs.length?gs.map(g=>{const quiz=/^(quiz|flash|room|team)[^:]*:/.test(g.aid);const f=fx[g.qid];return`<div class="card"><div class="row" style="justify-content:space-between"><b>${g.list.length} report${g.list.length>1?'s':''} · <code>${esc(g.qid)}</code></b>${f?pill(f.hidden?'banned':'ok',f.hidden?'hidden':'fixed'):''}</div><p style="margin:6px 0">${esc(g.text)}</p><small class="sub">${esc(g.right)}</small><ul style="margin:8px 0;padding-left:18px">${g.list.map(r=>`<li>${esc(r.reason)} <small class="sub">— ${esc(r.name)}, ${ago(r.createdAt)} ${r.status==='open'?'':'(handled)'}</small></li>`).join('')}</ul><div class="row">${quiz?`<button class="sm go" data-a="qedit" data-q="${esc(g.qid)}" data-t="${esc(g.text)}" data-r="${esc(g.right.replace(/^[^:]*:\s*/,''))}">Edit question</button>${f?.hidden?`<button class="sm" data-a="qshow" data-q="${esc(g.qid)}">Show again</button>`:`<button class="sm del" data-a="qhide" data-q="${esc(g.qid)}">Hide question</button>`}`:'<small class="sub">XI / Top 10 / Career data: fix it in the code (tell Claude).</small>'}<button class="sm" data-a="qdone" data-ids="${esc(g.list.filter(r=>r.status==='open').map(r=>r.id).join(','))}">Mark all handled</button></div><div id="qf-${esc(g.qid)}"></div></div>`}).join(''):'<div class="empty">No wrong-answer reports.</div>';
+  bulkBar('reports')}
+const setMod=(tx,uid,status,reason)=>get('moderation/'+uid).then(old=>tx.patch('moderation/'+uid,{status,reason:reason||'',at:Date.now(),warns:(old?.warns||0)+(status==='warned'?1:0)}));
+async function removeResults(tx,uid){const s=await query('submissions',[['uid','==',uid]],500);const live=s.filter(x=>x.status!=='rejected');for(const x of live)await tx.patch('submissions/'+x.id,{status:'rejected',reviewedAt:Date.now()});return live.length}
+
+// ---------- PLAYERS ----------
+async function players(){const all=await cached('players',5*6e4,async()=>{const [u,mods]=await Promise.all([query('users',[],5000),query('moderation',[],1000)]);for(const x of u)users[x.id]=x;return{u,mods:Object.fromEntries(mods.map(m=>[m.id,m]))}});
+  const q=$('#q').value.trim().toLowerCase(),f=$('#playersF').value;const since=Date.now()-7*DAY;
+  const rows=all.u.filter(x=>(f!=='new'||(x.createdAt||0)>=since)&&(f!=='mod'||(all.mods[x.id]&&all.mods[x.id].status!=='ok'))&&(`${x.name} ${x.email}`.toLowerCase().includes(q))).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,300);
+  $('#playersT').innerHTML=table([['Player',x=>who(x.id,x.name)],['Joined',x=>ago(x.createdAt)],['Status',x=>all.mods[x.id]&&all.mods[x.id].status!=='ok'?pill(all.mods[x.id].status):''],['',x=>`<button class="sm go" data-player="${esc(x.id)}">Open</button>`,'act']],rows,'No players match.')}
+
+/** Everything about one player, with actions. */
+async function openPlayer(uid){
+  $('#pp').hidden=false;$('#ppBody').innerHTML='<div class="empty">Loading…</div>';
+  const docs=await getMany(['users','wallets','profiles','streaks','passes','badges','moderation'].map(c=>`${c}/${uid}`));
+  const g=c=>docs[`${c}/${uid}`];const u=g('users')||{name:'?',email:''};users[uid]=u;
+  const [buys,rews,subs,byThem]=await Promise.all([query('tokenPurchases',[['uid','==',uid]],50),query('rewardRequests',[['uid','==',uid]],50),query('submissions',[['uid','==',uid]],100),query('reports',[['uid','==',uid]],100)]);
+  const aboutThem=(await query('reports',[['username','==',u.name||'']],50)).concat(byThem.filter(r=>r.kind==='auto'));
+  const w=g('wallets'),p=g('profiles'),s=g('streaks'),pass=g('passes'),b=g('badges'),m=g('moderation');
+  const sort=a=>a.sort((x,y)=>(y.createdAt||0)-(x.createdAt||0));
+  const live=s&&s.day>=cairoDay()-1?s.count:0;
+  $('#ppBody').innerHTML=`
+   <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(u.name)}</h2><button data-a="ppclose">✕ Close</button></div>
+   <p class="sub">${esc(u.email)} · joined ${when(u.createdAt)} · <code>${esc(uid)}</code> ${m&&m.status!=='ok'?pill(m.status)+(m.reason?` <small>${esc(m.reason)}</small>`:''):''}</p>
+   <div class="kv"><div><b>${(w?.tokens||0).toLocaleString()}</b><small>Tokens (${(w?.spent||0).toLocaleString()} spent)</small></div><div><b>Lv ${levelOf(p?.xp||0)}</b><small>${(p?.xp||0).toLocaleString()} XP</small></div><div><b>🔥 ${live}</b><small>Streak (best ${s?.best||0})</small></div><div><b>${pass&&pass.until>Date.now()?'👑 Active':'—'}</b><small>${pass&&pass.until>Date.now()?'Pass until '+new Date(pass.until).toLocaleDateString():'No season pass'}</small></div><div><b>${(b?.ids||[]).length}</b><small>Badges</small></div><div><b>${w?.games||0}</b><small>Games with tokens</small></div></div>
+   <div class="card"><b>Actions</b>
+    <div class="row" style="margin-top:8px"><input type="number" id="ppTok" placeholder="± tokens" style="width:110px"><button class="sm go" data-a="pptok" data-u="${esc(uid)}">Add / remove tokens</button></div>
+    <div class="row" style="margin-top:8px"><input type="number" id="ppLvl" min="1" max="200" placeholder="Level" style="width:110px" value="${levelOf(p?.xp||0)}"><button class="sm go" data-a="pplvl" data-u="${esc(uid)}">Set level</button></div>
+    <div class="row" style="margin-top:8px"><input type="number" id="ppPass" min="1" value="30" style="width:110px"><button class="sm go" data-a="pppass" data-u="${esc(uid)}">Give season pass (days)</button></div>
+    <div class="row" style="margin-top:8px"><input id="ppWhy" placeholder="Reason (shown in your log)" style="flex:1"></div>
+    <div class="row" style="margin-top:8px"><button class="sm warn" data-a="warn" data-u="${esc(uid)}">Warn</button>${m?.status==='banned'?`<button class="sm go" data-a="unban" data-u="${esc(uid)}">Unban</button>`:`<button class="sm del" data-a="ban" data-u="${esc(uid)}">Ban from online & rankings</button>`}<button class="sm" data-a="unseason" data-u="${esc(uid)}">Remove results from Seasons</button><button class="sm" data-a="reset" data-e="${esc(u.email)}">Send password reset</button></div>
+   </div>
+   <h3>Payments</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Paid',r=>`${r.egp} EGP → ${r.tokens}`],['Ref',r=>esc(r.ref)],['Status',r=>pill(r.status)]],sort(buys),'None.')}</div>
+   <h3>Rewards</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Reward',r=>RW[r.item]||esc(r.item)],['Tokens',r=>r.tokens],['Status',r=>pill(r.status)]],sort(rews),'None.')}</div>
+   <h3>Results</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Game',r=>esc(r.mode)],['Points',r=>r.points],['Status',r=>pill(r.status)]],sort(subs).slice(0,30),'None.')}</div>
+   <h3>Reports about them</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Type',r=>r.kind==='auto'?'🤖':'🚨'],['Reason',r=>esc(r.reason),'wide'],['Status',r=>pill(r.status)]],sort(aboutThem),'None. 👍')}</div>
+   <h3>Reports they sent</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Type',r=>esc(r.kind)],['Reason',r=>esc(r.reason),'wide'],['Status',r=>pill(r.status)]],sort(byThem.filter(r=>r.kind!=='auto')),'None.')}</div>`;
+}
+
+// ---------- WEEKLY / BOARDS / ADS / LOG / SETTINGS ----------
+async function sponsor(){const p=await get('config/weeklySponsor');$('#spn').value=p?.name||'';$('#spu').value=p?.url||'';D.logo=p?.logo||'';$('#spi').src=D.logo;$('#spi').hidden=!D.logo}
+async function weekly(){sponsor().catch(()=>{});const day=cairoDay(),thu=day-day%7;const sel=$('#wk');if(!sel.options.length)sel.innerHTML=[...Array(8)].map((_,i)=>{const w=thu-7*i;return`<option value="${w}">Thursday ${new Date(w*DAY).toLocaleDateString()}${i===0&&day%7===0?' (today)':''}</option>`}).join('');
+  const all=await cached('weekly:'+sel.value,6e4,()=>query('weeklyEntries',[['week','==',sel.value]],1000));await loadUsers(all.map(e=>e.uid));
+  const rows=all.filter(e=>e.status==='done').sort((a,b)=>b.score-a.score||b.correct-a.correct||(a.finishedAt||0)-(b.finishedAt||0));const playing=all.length-rows.length;
+  $('#weeklyT').innerHTML=table([['#',(e)=>rows.indexOf(e)===0?'🥇 Winner':rows.indexOf(e)+1],['Player',e=>who(e.uid,e.name)],['Score',e=>`<b>${e.score}</b>`],['Correct',e=>e.correct],['Finished',e=>when(e.finishedAt)]],rows,'No one has finished this contest.')+(playing?`<p class="sub" style="padding:8px 12px">${playing} started but didn't finish.</p>`:'')}
+async function boards(){const m=$('#mode').value;const rows=await cached('boards:'+m,6e4,async()=>{const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'leaderboard_'+m}],orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}],limit:200}})});return r.filter(x=>x.document).map(x=>docOf(x.document))});
+  $('#boardsT').innerHTML=table([['#',s=>rows.indexOf(s)+1],['Name',s=>esc(s.name)],['Score',s=>s.score],['Correct',s=>s.correct],['When',s=>when(s.date)],['',s=>`<button class="sm del" data-a="ds" data-i="${esc(s.id)}">Remove</button>`,'act']],rows,'No scores yet.')}
+async function ads(){const [a,c]=await cached('ads',6e4,()=>Promise.all([query('ads',[],500),query('adContacts',[],500)]));const cm=Object.fromEntries(c.map(x=>[x.id,x]));const o={pending:0,approved:1};a.sort((x,y)=>(o[x.status]??9)-(o[y.status]??9)||(y.createdAt||0)-(x.createdAt||0));
+  $('#adsT').innerHTML=table([['When',x=>ago(x.createdAt)],['Business',x=>esc(x.business)],['Text',x=>esc(x.text),'wide'],['Package',x=>esc(x.package)],['Reference',x=>`<b>${esc(cm[x.id]?.payRef||'—')}</b>`],['Contact',x=>esc(cm[x.id]?.contact||'')],['Status',x=>pill(x.status)],['',x=>x.status==='pending'?`<button class="sm go" data-a="adok" data-i="${esc(x.id)}">Paid – approve</button><button class="sm del" data-a="adno" data-i="${esc(x.id)}">Reject</button>`:x.status==='approved'?`<button class="sm" data-a="adend" data-i="${esc(x.id)}">End ad</button>`:'','act']],a,'No ads yet.')}
+async function log(){const rows=await cached('log',3e4,async()=>{const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'adminLog'}],orderBy:[{field:{fieldPath:'at'},direction:'DESCENDING'}],limit:200}})});return r.filter(x=>x.document).map(x=>docOf(x.document))});
+  $('#logT').innerHTML=table([['When',e=>when(e.at)],['What',e=>esc(e.label),'wide'],['',e=>e.undone?pill('ended','undone'):`<button class="sm" data-undo="${esc(e.id)}">Undo</button>`,'act']],rows,'Nothing yet.')}
+async function settings(){const p=await get('config/payments');$('#ipa').value=p?.instapay||'';$('#wp').value=p?.weekPrice||'';$('#mp').value=p?.monthPrice||''}
+
+// ---------- navigation + refresh ----------
+let D={tab:'today'};
+const VIEWS={today,buys,rewards,reviews,reports,players,weekly,boards,ads,log,settings};
+function go(t){D.tab=t;document.querySelectorAll('#tabs [data-t]').forEach(x=>x.classList.toggle('on',x.dataset.t===t));Object.keys(VIEWS).forEach(id=>$('#'+id).hidden=id!==t);store.set('kwTab',t);refresh()}
+function refresh(){return Promise.resolve().then(()=>VIEWS[D.tab]()).then(()=>D.tab!=='today'&&badges()).catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
+const LIVE=['today','buys','rewards','reviews','reports'];
+setInterval(()=>{if(!session||document.hidden||armed||!$('#pp').hidden||!LIVE.includes(D.tab)||document.activeElement?.tagName==='INPUT'||Object.values(SEL).some(s=>s.size))return;drop('counts',D.tab);refresh()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&session&&LIVE.includes(D.tab)){drop('counts',D.tab);refresh()}});
+
+// ---------- clicks ----------
+const reload=(...k)=>{drop('counts','stats',...k);refresh()};
+document.addEventListener('change',e=>{const c=e.target.closest('[data-sel]');if(!c)return;const s=SEL[c.dataset.sel];c.checked?s.add(c.dataset.i):s.delete(c.dataset.i);c.closest('tr').classList.toggle('sel',c.checked);bulkBar(c.dataset.sel)});
+document.addEventListener('click',async e=>{
+  const z=e.target.closest('[data-z]');if(z){$('#zoom img').src=proofs[z.dataset.z];$('#zoom').style.display='flex';return}
+  if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
+  if(e.target.id==='pp'){$('#pp').hidden=true;return}
+  const gt=e.target.closest('[data-go]');if(gt)return go(gt.dataset.go);
+  const pl=e.target.closest('[data-player]');if(pl&&pl.dataset.player)return openPlayer(pl.dataset.player).catch(er=>msg('Error: '+er.message));
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.t){D.tab=b.dataset.t;D.onlyNew=!!b.dataset.new;document.querySelectorAll('.tabs [data-t]').forEach(x=>x.classList.toggle('on',x===b));['buys','rewards','players','weekly','boards','reviews','reports','ads','pay'].forEach(id=>$('#'+id).hidden=id!==D.tab);Promise.resolve().then(()=>({boards,ads,pay,weekly,reviews,reports}[D.tab]||render)()).catch(e=>msg('Error: '+e.message));return}
-  const a=b.dataset.a,id=b.dataset.i;
-  if(a==='bok')arm(b,async()=>{const r=await get('tokenPurchases/'+id);if(r.status!=='pending')throw new Error('already handled');await addTokens(r.uid,r.tokens);await patch('tokenPurchases/'+id,{status:'approved'});msg(`${r.tokens} tokens added to ${r.name}`);await load()});
-  if(a==='bno')arm(b,async()=>{await patch('tokenPurchases/'+id,{status:'rejected'});await load()});
-  if(a==='rok')arm(b,async()=>{const r=await get('rewardRequests/'+id);if(r.status!=='pending')throw new Error('already handled');const w=await get('wallets/'+r.uid);if(!w||w.tokens<r.tokens)throw new Error(`Not enough tokens (has ${w?.tokens??0})`);await patch('wallets/'+r.uid,{tokens:w.tokens-r.tokens,spent:(w.spent||0)+r.tokens,updatedAt:Date.now()});await patch('rewardRequests/'+id,{status:'approved'});if(r.item==='pass'){const p=await get('passes/'+r.uid);const from=Math.max(Date.now(),p?.until||0);const until=from+30*864e5;if(p)await patch('passes/'+r.uid,{until});else await create('passes',r.uid,{until});msg('Season pass active until '+new Date(until).toLocaleDateString())}else msg('Approved – email the player to arrange delivery');await load()});
-  if(a==='rno')arm(b,async()=>{await patch('rewardRequests/'+id,{status:'rejected'});await load()});
-  if(a==='give'){const n=Math.round(+document.getElementById('tk-'+id).value);if(!(n>0))return msg('Type how many tokens first');arm(b,async()=>{await addTokens(id,n);msg(`${n} tokens added to ${b.dataset.n}`);await load()})}
+  if(b.dataset.t)return go(b.dataset.t);
+  if(b.dataset.undo||b.id==='toastU'){const id=b.dataset.undo||b.dataset.u;$('#toast').style.display='none';return undo(id).catch(er=>msg('Error: '+er.message))}
+  const a=b.dataset.a,id=b.dataset.i,uid=b.dataset.u;
+  if(a==='ppclose'){$('#pp').hidden=true;return}
+  // bulk
+  const bk=b.dataset.bulk;if(bk){const sec=b.closest('section').id;const ids=[...SEL[sec]];if(bk==='clear'){SEL[sec].clear();return refresh()}
+    return arm(b,async()=>{let done=0,fail=[];const label={bok:'Approved payments',bno:'Rejected payments',rok:'Approved rewards',rno:'Declined rewards',rvok:'Confirmed results',rvno:'Did not count results',repok:'Marked reports handled',repdel:'Deleted reports'}[bk];
+      await act(`${label}: ${ids.length}`,async tx=>{for(const i of ids){try{
+        if(bk==='bok')await approveBuy(tx,i);else if(bk==='bno')await tx.patch('tokenPurchases/'+i,{status:'rejected'});
+        else if(bk==='rok')await approveReward(tx,i);else if(bk==='rno')await tx.patch('rewardRequests/'+i,{status:'rejected'});
+        else if(bk==='rvok')await tx.patch('submissions/'+i,{status:'reviewed',reviewedAt:Date.now()});else if(bk==='rvno')await tx.patch('submissions/'+i,{status:'rejected',reviewedAt:Date.now()});
+        else if(bk==='repok')await tx.patch('reports/'+i,{status:'handled'});else if(bk==='repdel')await tx.del('reports/'+i);done++}catch(er){fail.push(er.message)}}});
+      SEL[sec].clear();if(fail.length)msg(`${done} done, ${fail.length} failed: ${fail[0]}`);reload(sec,'players')})}
+  // single actions
+  if(a==='bok')arm(b,()=>act('Payment approved',async tx=>{const r=await approveBuy(tx,id);return r}).then(()=>reload('buys')));
+  if(a==='bno')arm(b,()=>act('Payment marked not paid',tx=>tx.patch('tokenPurchases/'+id,{status:'rejected'})).then(()=>reload('buys')));
+  if(a==='rok')arm(b,()=>act('Reward approved',tx=>approveReward(tx,id)).then(()=>reload('rewards')));
+  if(a==='rno')arm(b,()=>act('Reward declined',tx=>tx.patch('rewardRequests/'+id,{status:'rejected'})).then(()=>reload('rewards')));
+  if(a==='rvok'){const n=Math.round(+document.getElementById('pt-'+id).value);if(!Number.isFinite(n))return msg('Type the points');act(`Result confirmed (${n} pts)`,tx=>tx.patch('submissions/'+id,{status:'reviewed',points:n,reviewedAt:Date.now()})).then(()=>reload('reviews'))}
+  if(a==='rvno')act("Result won't count",tx=>tx.patch('submissions/'+id,{status:'rejected',reviewedAt:Date.now()})).then(()=>reload('reviews'));
+  if(a==='rvback')act('Result back to waiting',tx=>tx.patch('submissions/'+id,{status:'pending'})).then(()=>reload('reviews'));
+  if(b.id==='rvall')arm(b,async()=>{const p=(D.rv||[]).filter(x=>x.status==='pending');await act(`Confirmed all ${p.length} waiting results`,async tx=>{for(const x of p)await tx.patch('submissions/'+x.id,{status:'reviewed',reviewedAt:Date.now()})});reload('reviews')});
+  if(b.id==='rvauto')autoConfirm(false).catch(er=>msg('Error: '+er.message));
+  if(a==='repok')act('Report handled',tx=>tx.patch('reports/'+id,{status:'handled'})).then(()=>reload('reports'));
+  if(a==='repdel')arm(b,()=>act('Report deleted',tx=>tx.del('reports/'+id)).then(()=>reload('reports')));
+  if(a==='qdone'){const ids=(b.dataset.ids||'').split(',').filter(Boolean);if(!ids.length)return;act(`${ids.length} answer report(s) handled`,async tx=>{for(const i of ids)await tx.patch('reports/'+i,{status:'handled'})}).then(()=>reload('reports'))}
+  if(a==='qhide'||a==='qshow'){const q=b.dataset.q;arm(b,()=>act(`${a==='qhide'?'Hid':'Showed again'} question ${q}`,async tx=>{const f=await get('questionFixes/'+q);if(f)await tx.patch('questionFixes/'+q,{hidden:a==='qhide',updatedAt:Date.now()});else await tx.create('questionFixes',q,{hidden:a==='qhide',updatedAt:Date.now()})}).then(()=>reload('fixes','reports')))}
+  if(a==='qedit'){const q=b.dataset.q,box=document.getElementById('qf-'+q);box.innerHTML=`<div class="card" style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><small class="sub" style="margin:0">Fix the question in one language at a time. Empty fields stay as they are. Players get the fix next time they open the app.</small><select id="qfl-${esc(q)}"><option value="en">English</option><option value="ar">Arabic</option><option value="fr">French</option></select><textarea id="qfq-${esc(q)}" rows="2" placeholder="Question text">${esc(b.dataset.t)}</textarea><input id="qfa-${esc(q)}" placeholder="Correct answer" value="${esc(b.dataset.r)}"><div class="row"><button class="sm go" data-a="qsave" data-q="${esc(q)}">Save fix</button></div></div>`;return}
+  if(a==='qsave'){const q=b.dataset.q,lang=document.getElementById('qfl-'+q).value,text=document.getElementById('qfq-'+q).value.trim(),ans=document.getElementById('qfa-'+q).value.trim();const data={updatedAt:Date.now(),hidden:false};if(text)data[lang+'_q']=text;if(ans)data[lang+'_a']=ans;
+    act(`Fixed question ${q} (${lang})`,async tx=>{const f=await get('questionFixes/'+q);if(f)await tx.patch('questionFixes/'+q,data);else await tx.create('questionFixes',q,data)}).then(()=>reload('fixes','reports'))}
+  if(a==='warn'||a==='ban'||a==='unban'){const why=($('#ppWhy')?.value||'').trim()||(id?'Report '+id:'');const st={warn:'warned',ban:'banned',unban:'ok'}[a];const nm=users[uid]?.name||uid;
+    const run=()=>act(`${{warn:'Warned',ban:'Banned',unban:'Unbanned'}[a]} ${nm}`,async tx=>{await setMod(tx,uid,st,why);if(id)await tx.patch('reports/'+id,{status:'handled'})}).then(()=>{drop('players','reports');if(!$('#pp').hidden)openPlayer(uid);reload('reports')});
+    a==='ban'?arm(b,run):run()}
+  if(a==='unseason')arm(b,()=>act(`Removed ${users[uid]?.name||uid}'s results from Seasons`,tx=>removeResults(tx,uid)).then(n=>{msg(`${n} result(s) removed`);reload('reviews')}));
+  if(a==='pptok'){const n=Math.round(+$('#ppTok').value);if(!n)return msg('Type how many tokens (minus to remove)');arm(b,()=>act(`${n>0?'+':''}${n} tokens for ${users[uid]?.name}`,async tx=>{const w=await get('wallets/'+uid);if(n<0&&(w?.tokens||0)+n<0)throw new Error('They only have '+(w?.tokens||0));await addTokens(tx,uid,n)}).then(()=>openPlayer(uid)))}
+  if(a==='pplvl'){const n=Math.round(+$('#ppLvl').value);if(!(n>=1&&n<=200))return msg('Level 1–200');arm(b,()=>act(`Set ${users[uid]?.name} to level ${n}`,async tx=>{const p=await get('profiles/'+uid);const data={xp:xpForLevel(n),updatedAt:Date.now()};if(p)await tx.patch('profiles/'+uid,data);else await tx.create('profiles',uid,{name:users[uid]?.name||'Player',...data})}).then(()=>openPlayer(uid)))}
+  if(a==='pppass'){const n=Math.round(+$('#ppPass').value);if(!(n>0))return msg('Type the days');arm(b,()=>act(`Gave ${users[uid]?.name} a ${n}-day season pass`,tx=>givePass(tx,uid,n)).then(()=>openPlayer(uid)))}
   if(a==='reset')arm(b,async()=>{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email:b.dataset.e});msg('Reset email sent to '+b.dataset.e)});
-  if(a==='ds')arm(b,async()=>{await del(`leaderboard_${$('#mode').value}/${id}`);await boards()});
-  if(a==='adok'||a==='adno'||a==='adend')arm(b,async()=>{await patch('ads/'+id,{status:{adok:'approved',adno:'rejected',adend:'ended'}[a]});await ads()});
-  if(a==='rvok'){const n=Math.round(+document.getElementById('pt-'+id).value);if(!Number.isFinite(n))return msg('Type the points');arm(b,async()=>{await patch('submissions/'+id,{status:'reviewed',points:n,reviewedAt:Date.now()});await reviews()})}
-  if(a==='rvno')arm(b,async()=>{await patch('submissions/'+id,{status:'rejected',reviewedAt:Date.now()});await reviews()});
-  if(a==='rvback')arm(b,async()=>{await patch('submissions/'+id,{status:'pending'});await reviews()});
-  if(b.id==='rvall')arm(b,async()=>{const p=(D.rv||[]).filter(x=>x.status==='pending');for(const x of p)await patch('submissions/'+x.id,{status:'reviewed',reviewedAt:Date.now()});msg(p.length+' results confirmed');await reviews()});
-  if(a==='repok')arm(b,async()=>{await patch('reports/'+id,{status:'handled'});await reports()});
-  if(a==='repdel')arm(b,async()=>{await del('reports/'+id);await reports()});
+  if(a==='ds')arm(b,()=>act('Removed a leaderboard score',tx=>tx.del(`leaderboard_${$('#mode').value}/${id}`)).then(()=>reload('boards')));
+  if(a==='adok'||a==='adno'||a==='adend')arm(b,()=>act(`Ad ${{adok:'approved',adno:'rejected',adend:'ended'}[a]}`,tx=>tx.patch('ads/'+id,{status:{adok:'approved',adno:'rejected',adend:'ended'}[a]})).then(()=>reload('ads')));
   if(b.id==='spclear'){D.logo='';$('#spi').hidden=true;return}
-  if(b.id==='spsave'){const name=$('#spn').value.trim().slice(0,40),url=$('#spu').value.trim();if(url&&!/^https:\/\//.test(url))return msg('The link must start with https://');const data={name,url,logo:D.logo||'',updatedAt:Date.now()};(await get('config/weeklySponsor')?patch('config/weeklySponsor',data):create('config','weeklySponsor',data)).then(()=>msg('Sponsor saved'),e=>msg('Error: '+e.message));return}
-  if(b.id==='savepay'){const instapay=$('#ipa').value.trim(),weekPrice=+$('#wp').value,monthPrice=+$('#mp').value;if(!instapay||!(weekPrice>0)||!(monthPrice>0))return msg('Fill in all three');await patch('config/payments',{instapay,weekPrice:Math.round(weekPrice),monthPrice:Math.round(monthPrice),updatedAt:Date.now()}).then(()=>msg('Saved'),e=>msg('Error: '+e.message))}
+  if(b.id==='spsave'){const name=$('#spn').value.trim().slice(0,40),url=$('#spu').value.trim();if(url&&!/^https:\/\//.test(url))return msg('The link must start with https://');const data={name,url,logo:D.logo||'',updatedAt:Date.now()};act('Saved prize sponsor',async tx=>{const p=await get('config/weeklySponsor');if(p)await tx.patch('config/weeklySponsor',data);else await tx.create('config','weeklySponsor',data)}).catch(er=>msg('Error: '+er.message))}
+  if(b.id==='savepay'){const instapay=$('#ipa').value.trim(),weekPrice=+$('#wp').value,monthPrice=+$('#mp').value;if(!instapay||!(weekPrice>0)||!(monthPrice>0))return msg('Fill in all three');act('Saved InstaPay and prices',tx=>tx.patch('config/payments',{instapay,weekPrice:Math.round(weekPrice),monthPrice:Math.round(monthPrice),updatedAt:Date.now()})).catch(er=>msg('Error: '+er.message))}
 });
 $('#spl').onchange=e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{const k=Math.min(1,400/img.width,120/img.height);const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);D.logo=c.toDataURL('image/png');$('#spi').src=D.logo;$('#spi').hidden=false;URL.revokeObjectURL(img.src)};img.src=URL.createObjectURL(f)};
-$('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#rvf').onchange=()=>reviews().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
+let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(players,150)};
+for(const [sel,v] of [['#buysF','buys'],['#rewardsF','rewards'],['#reviewsF','reviews'],['#reportsF','reports'],['#playersF','players'],['#mode','boards']])$(sel).onchange=()=>VIEWS[v]().catch(e=>msg('Error: '+e.message));
+$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));
 
-function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
-finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
-setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
-</script><script src="reviews.js" defer></script></body></html>
+function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as admin · lists refresh every 30 s while open':'Owner only.';if(ok){const t=location.hash==='#new'?'players':store.get('kwTab')||'today';if(location.hash==='#new')$('#playersF').value='new';go(VIEWS[t]?t:'today')}else{$('#user').value=store.get('kwUser')||'admin';$('#pass').focus()}}
+finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show);
+</script></body></html>
