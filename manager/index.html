@@ -41,6 +41,8 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
   <p style="font-size:42px;margin:0">🔒</p>
   <p id="lockText">Kaweera Manager is locked.</p>
   <button class="go" id="unlock">Unlock with Touch ID / Face ID</button>
+  <button class="go" id="setup" hidden>Set up Touch ID / Face ID</button>
+  <button id="useSynced" class="sm" style="margin-top:6px">I already set it up on my iPhone / Mac</button>
   <p class="sub" id="lockmsg"></p>
 </section>
 
@@ -169,35 +171,38 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
 });
 $('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
 
-// ---------- fingerprint lock (passkey on this device: Touch ID on Mac, Face ID / Touch ID on iPhone) ----------
+// ---------- fingerprint lock: a passkey (Touch ID on Mac, Face ID / Touch ID on iPhone, synced by iCloud Keychain) ----------
+// Safari only allows Touch ID / Face ID when the request starts right inside the tap, so the click handlers below call
+// navigator.credentials straight away, with nothing awaited before it.
 const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const unb64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
 const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
-let unlocked=false, hiddenAt=0;
-async function hasFingerprint(){try{return !!window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()}catch{return false}}
-async function setupPasskey(){
-  const cred=await navigator.credentials.create({publicKey:{rp:{name:'Kaweera Manager',id:location.hostname},user:{id:rnd(16),name:OWNER,displayName:'Kaweera owner'},challenge:rnd(32),
-    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},timeout:60000}});
-  store.set('kwPasskey',{id:b64u(cred.rawId),email:OWNER,at:Date.now()});
-}
-async function unlockPasskey(){
-  const pk=store.get('kwPasskey');
-  await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:unb64u(pk.id),transports:['internal']}],userVerification:'required',timeout:60000,rpId:location.hostname}});
-}
-$('#unlock').onclick=async()=>{
+let unlocked=false, hiddenAt=0, canFinger=null;
+if(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable)PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(v=>{canFinger=v;show()},()=>{canFinger=false;show()});else canFinger=false;
+const lockErr=e=>{$('#lockmsg').textContent=e&&e.name==='NotAllowedError'?'Cancelled, timed out or not recognised. Tap the button and try again.':e&&e.name==='InvalidStateError'?'Touch ID / Face ID is already set up here. Tap Unlock.':'Could not use Touch ID / Face ID: '+(e&&e.message||e)};
+$('#unlock').onclick=()=>{
   $('#lockmsg').textContent='';
-  if(!(await hasFingerprint())){$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.';return}
-  try{
-    if(!store.get('kwPasskey')){await setupPasskey()} else {await unlockPasskey()}
-    unlocked=true;show();
-  }catch(e){$('#lockmsg').textContent=e&&e.name==='NotAllowedError'?'Cancelled or not recognised. Try again.':'Could not use the fingerprint: '+(e&&e.message||e)}
+  // Any Kaweera passkey for this site works (also one made on your other Apple device and synced by iCloud).
+  navigator.credentials.get({publicKey:{challenge:rnd(32),rpId:location.hostname,userVerification:'required',timeout:60000}})
+    .then(c=>{store.set('kwPasskey',{id:b64u(c.rawId),email:OWNER,at:Date.now()});unlocked=true;show()})
+    .catch(e=>{lockErr(e);if(!store.get('kwPasskey'))$('#setup').hidden=false});
 };
+$('#setup').onclick=()=>{
+  $('#lockmsg').textContent='';
+  navigator.credentials.create({publicKey:{rp:{name:'Kaweera Manager',id:location.hostname},user:{id:new TextEncoder().encode('kaweera-owner'),name:OWNER,displayName:'Kaweera owner'},challenge:rnd(32),
+    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'required',requireResidentKey:true},timeout:60000}})
+    .then(c=>{store.set('kwPasskey',{id:b64u(c.rawId),email:OWNER,at:Date.now()});unlocked=true;show()})
+    .catch(lockErr);
+};
+$('#useSynced').onclick=()=>{$('#unlock').hidden=false;$('#unlock').click()};
 // Lock again after 2 minutes in the background.
 document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(unlocked&&hiddenAt&&Date.now()-hiddenAt>120000){unlocked=false;show()}});
 
 function show(){const signedIn=session&&session.email===OWNER;const ok=signedIn&&unlocked;
   $('#lock').hidden=!(signedIn&&!unlocked);
-  if(signedIn&&!unlocked){$('#lockText').textContent=store.get('kwPasskey')?'Kaweera Manager is locked.':'Turn on the fingerprint lock: from now on only your Touch ID / Face ID opens the Manager on this device.';$('#unlock').textContent=store.get('kwPasskey')?'Unlock with Touch ID / Face ID':'Turn on Touch ID / Face ID lock';hasFingerprint().then(h=>{if(!h){$('#unlock').disabled=true;$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.'}})}
+  if(signedIn&&!unlocked){const has=!!store.get('kwPasskey');
+    $('#lockText').textContent=has?'Kaweera Manager is locked.':'Set up Touch ID / Face ID once on this device. After that only your fingerprint or face opens the Manager.';
+    $('#setup').hidden=has;$('#unlock').hidden=!has;
+    if(canFinger===false){$('#unlock').disabled=$('#setup').disabled=true;$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.'}}
   $('#login').hidden=!!signedIn;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
 finishLink().then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
 setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&unlocked&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
