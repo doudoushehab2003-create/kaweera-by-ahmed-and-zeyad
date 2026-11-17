@@ -1,0 +1,14 @@
+html,body,#root{height:100%;min-height:0}body{overscroll-behavior:none}
+[data-testid="fit-game"]{height:var(--game-height,100dvh)!important;padding:6px max(8px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom))!important;overflow:hidden!important}
+[data-testid="game-content"]{height:100%;max-width:980px!important;width:100%;gap:6px!important;min-height:0}
+[data-testid="game-content"]>[data-testid="question-view"]{min-height:0;flex:1;gap:6px!important}
+[data-testid="question-options"]{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}
+[data-testid="question-options"] [role="button"]{padding:6px!important;min-height:44px}
+[data-testid="top10-board"]{display:grid!important;grid-template-columns:1fr 1fr;gap:4px!important}
+[data-testid="top10-row"]{min-height:26px}
+[data-testid="game-content"] [role="button"]{padding-top:5px!important;padding-bottom:5px!important}
+[data-testid="game-content"] input{font-size:16px!important;min-height:40px!important;padding:6px!important}
+[data-testid="game-content"] [data-testid="xi-pitch"]{max-height:44dvh!important;min-height:180px}
+@media(max-height:650px){[data-testid="game-content"]{gap:3px!important}[data-testid="question-view"]>div:first-child{max-height:44px}[data-testid="question-view"]>div:nth-child(3){flex-shrink:1}[data-testid="question-options"] [role="button"] div{font-size:13px!important;line-height:18px!important}}
+@media(max-height:430px){[data-testid="game-content"]{overflow-y:auto}[data-testid="top10-board"]{grid-template-columns:1fr 1fr 1fr!important}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}

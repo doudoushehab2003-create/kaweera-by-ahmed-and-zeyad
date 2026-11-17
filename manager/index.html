@@ -2,6 +2,12 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Kaweera Manager</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-180.png">
+<meta name="theme-color" content="#06150c">
+<meta name="apple-mobile-web-app-title" content="KAWEERA Manager">
+<script src="./passkey-config.js"></script>
+<script src="./passkeys.js"></script>
 <style>
 [hidden]{display:none!important}
 :root{--bg:#06150c;--card:#0d2616;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--ink:#04200f}
@@ -31,19 +37,12 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
 <p class="sub" id="who"></p>
 
 <section id="login" class="login" hidden>
-  <p>Sign in with the owner email. We send a sign-in link to your inbox.</p>
+  <button class="go" id="passkey" hidden>Sign in with Touch ID / passkey</button>
+  <p id="passkeynote">Passkeys require server setup. Owner email sign-in remains available.</p>
+  <p>Sign in with the owner email to enroll a passkey or recover access.</p>
   <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
   <button class="go" id="send">Email me a sign-in link</button>
   <p class="sub" id="loginmsg"></p>
-</section>
-
-<section id="lock" class="login" hidden>
-  <p style="font-size:42px;margin:0">🔒</p>
-  <p id="lockText">Kaweera Manager is locked.</p>
-  <button class="go" id="unlock">Unlock with Touch ID / Face ID</button>
-  <button class="go" id="setup" hidden>Set up Touch ID / Face ID</button>
-  <button id="useSynced" class="sm" style="margin-top:6px">I already set it up on my iPhone / Mac</button>
-  <p class="sub" id="lockmsg"></p>
 </section>
 
 <main id="app" hidden>
@@ -57,11 +56,12 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
     <button data-t="boards">Leaderboards</button>
     <button data-t="ads">📣 Ads</button>
     <button data-t="pay">💳 InstaPay</button>
+    <button id="enroll" hidden>Add a passkey</button>
     <button id="out" style="margin-left:auto">Sign out</button>
   </div>
   <section id="buys"><p class="sub">New payment requests appear here by themselves. Check the screenshot and your InstaPay, then approve to add the tokens.</p><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Screenshot</th><th>Reference</th><th>Paid</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="bb"></tbody></table></div></section>
   <section id="rewards" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Email</th><th>Reward</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="rb"></tbody></table></div></section>
-  <section id="players" hidden><div class="bar"><input id="q" placeholder="Search by name or email"></div><div class="wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Tokens</th><th>Games</th><th>Level</th><th></th></tr></thead><tbody id="ub"></tbody></table></div></section>
+  <section id="players" hidden><div class="bar"><input id="q" placeholder="Search by name or email"></div><div class="wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Tokens</th><th>Games</th><th></th></tr></thead><tbody id="ub"></tbody></table></div></section>
   <section id="weekly" hidden><p class="sub">Thursday contest. The winner (top row) gets a ticket to any match in Egypt the week after. Email them to pick the match.</p><div class="bar"><select id="wk"></select></div><div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Score</th><th>Correct</th><th>Finished</th></tr></thead><tbody id="wb"></tbody></table></div></section>
   <section id="boards" hidden><div class="bar"><select id="mode"><option>mixed</option><option>easy</option><option>medium</option><option>hard</option><option>daily</option></select></div><div class="wrap"><table><thead><tr><th>#</th><th>Name</th><th>Score</th><th>Correct</th><th>When</th><th></th></tr></thead><tbody id="sb"></tbody></table></div></section>
   <section id="ads" hidden><div class="wrap"><table><thead><tr><th>When</th><th>Business</th><th>Text</th><th>Package</th><th>Reference</th><th>Contact</th><th>Status</th><th></th></tr></thead><tbody id="ab"></tbody></table></div></section>
@@ -107,6 +107,32 @@ async function finishLink(){
   history.replaceState(null,'',location.pathname+location.hash);
 }
 $('#out').onclick=signOut;
+async function verifySession(){
+  if(!session)return;
+  const j=await post(`${AUTH}:lookup?key=${KEY}`,{idToken:await token()});
+  const u=j.users?.[0];
+  if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
+  session.email=u.email;store.set('kwSession',session);
+}
+$('#passkey').hidden=!managerPasskeys.available;
+$('#enroll').hidden=!managerPasskeys.available;
+if(managerPasskeys.available)$('#passkeynote').textContent='Use an enrolled passkey. Your Mac may offer Touch ID or its device password. Sign-in is remembered on this browser or Dock app until you sign out or the session expires.';
+$('#passkey').onclick=async()=>{
+  $('#passkey').disabled=true;
+  try{
+    const {customToken}=await managerPasskeys.login();
+    const j=await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true});
+    session={idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
+    await verifySession();show();
+  }catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled or unavailable. Try again or use email.':e.message}
+  finally{$('#passkey').disabled=false}
+};
+$('#enroll').onclick=async()=>{
+  $('#enroll').disabled=true;
+  try{await managerPasskeys.register(await token());msg('Passkey saved. You can now sign in with it from the Dock app.')}
+  catch(e){msg(e.name==='NotAllowedError'?'Passkey setup cancelled.':e.message+' Use a new owner email link within 5 minutes.')}
+  finally{$('#enroll').disabled=false}
+};
 
 // ---------- Firestore ----------
 const enc=v=>typeof v==='string'?{stringValue:v}:Number.isInteger(v)?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{doubleValue:v};
@@ -123,9 +149,9 @@ const del=path=>fs(path,{method:'DELETE'});
 let D={users:[],wallets:[],buys:[],rewards:[],tab:'buys'};
 const emailOf=uid=>D.users.find(u=>u.id===uid)?.email??'';
 async function load(){
-  const [users,wallets,buys,rewards,profiles]=await Promise.all([list('users'),list('wallets'),list('tokenPurchases'),list('rewardRequests'),list('profiles').catch(()=>[])]);
+  const [users,wallets,buys,rewards]=await Promise.all([list('users'),list('wallets'),list('tokenPurchases'),list('rewardRequests')]);
   const order=x=>x.status==='pending'?0:1;
-  Object.assign(D,{users,wallets,profiles,buys:buys.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt),rewards:rewards.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt)});
+  Object.assign(D,{users,wallets,buys:buys.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt),rewards:rewards.sort((a,b)=>order(a)-order(b)||b.createdAt-a.createdAt)});
   const nb=buys.filter(b=>b.status==='pending').length,nr=rewards.filter(r=>r.status==='pending').length;
   const nn=users.filter(u=>(u.createdAt||0)>=Date.now()-7*864e5).length;$('#nn').hidden=!nn;$('#nn').textContent=nn;
   $('#nb').hidden=!nb;$('#nb').textContent=nb;$('#nr').hidden=!nr;$('#nr').textContent=nr;
@@ -141,8 +167,8 @@ function render(){
   const t=D.tab;
   if(t==='buys'){$('#bb').innerHTML=D.buys.length?D.buys.map(b=>`<tr><td>${when(b.createdAt)}</td><td>${esc(b.name)}<br><small class="sub">${esc(emailOf(b.uid))}</small></td><td>${proofCell(b.id)}</td><td><b>${esc(b.ref)}</b></td><td>${b.egp} EGP</td><td>${b.tokens}</td><td>${pill(b.status)}</td><td class="act">${b.status==='pending'?`<button class="sm go" data-a="bok" data-i="${b.id}">Paid – add tokens</button><button class="sm del" data-a="bno" data-i="${b.id}">Not paid</button>`:''}</td></tr>`).join(''):'<tr><td colspan=8 class="empty">No payment requests yet.</td></tr>';D.buys.forEach(b=>loadProof(b.id))}
   if(t==='rewards')$('#rb').innerHTML=D.rewards.length?D.rewards.map(r=>`<tr><td>${when(r.createdAt)}</td><td>${esc(r.name)}</td><td>${esc(emailOf(r.uid))}</td><td>${RW[r.item]||esc(r.item)}</td><td>${(r.tokens||0).toLocaleString()}</td><td>${pill(r.status)}</td><td class="act">${r.status==='pending'?`<button class="sm go" data-a="rok" data-i="${r.id}">Approve &amp; take tokens</button><button class="sm del" data-a="rno" data-i="${r.id}">Decline</button>`:''}</td></tr>`).join(''):'<tr><td colspan=7 class="empty">No reward requests yet.</td></tr>';
-  if(t==='players'){const q=$('#q').value.toLowerCase();const w=Object.fromEntries(D.wallets.map(x=>[x.id,x]));const pf=Object.fromEntries((D.profiles||[]).map(x=>[x.id,x]));const since=Date.now()-7*864e5;const rows=D.users.filter(u=>(!D.onlyNew||(u.createdAt||0)>=since)&&(u.name+' '+u.email).toLowerCase().includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
-    $('#ub').innerHTML=rows.length?rows.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${when(u.createdAt)}</td><td>${(w[u.id]?.tokens||0).toLocaleString()}</td><td>${w[u.id]?.games||0}</td><td><b style="color:var(--neon)">${levelOf(pf[u.id]?.xp||0)}</b> <small class="sub">${(pf[u.id]?.xp||0).toLocaleString()} XP</small></td><td class="act"><input type="number" min="1" max="500" step="1" placeholder="Level" id="lv-${u.id}" style="width:70px"><button class="sm go" data-a="setlv" data-i="${u.id}" data-n="${esc(u.name)}">Set level</button><input type="number" min="1" step="1" placeholder="Tokens" id="tk-${u.id}" style="width:80px"><button class="sm go" data-a="give" data-i="${u.id}" data-n="${esc(u.name)}">Add tokens</button><button class="sm" data-a="reset" data-e="${esc(u.email)}">Send password reset email</button></td></tr>`).join(''):`<tr><td colspan=6 class="empty">${D.onlyNew?'No new accounts in the last 7 days.':'No players yet.'}</td></tr>`}
+  if(t==='players'){const q=$('#q').value.toLowerCase();const w=Object.fromEntries(D.wallets.map(x=>[x.id,x]));const since=Date.now()-7*864e5;const rows=D.users.filter(u=>(!D.onlyNew||(u.createdAt||0)>=since)&&(u.name+' '+u.email).toLowerCase().includes(q)).sort((a,b)=>b.createdAt-a.createdAt);
+    $('#ub').innerHTML=rows.length?rows.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td>${when(u.createdAt)}</td><td>${(w[u.id]?.tokens||0).toLocaleString()}</td><td>${w[u.id]?.games||0}</td><td class="act"><input type="number" min="1" step="1" placeholder="Tokens" id="tk-${u.id}" style="width:80px"><button class="sm go" data-a="give" data-i="${u.id}" data-n="${esc(u.name)}">Add tokens</button><button class="sm" data-a="reset" data-e="${esc(u.email)}">Send password reset email</button></td></tr>`).join(''):`<tr><td colspan=6 class="empty">${D.onlyNew?'No new accounts in the last 7 days.':'No players yet.'}</td></tr>`}
 }
 async function weekly(){const all=await list('weeklyEntries');const day=Math.floor((Date.now()+7200000)/864e5);const thu=day-day%7;const weeks=[...new Set([String(thu),...all.map(e=>e.week)])].sort((a,b)=>b-a);const sel=$('#wk');const cur=sel.value||String(thu);sel.innerHTML=weeks.map(w=>`<option value="${w}"${w===cur?' selected':''}>Thursday ${new Date(w*864e5-72e5+432e5).toLocaleDateString()}${w===String(thu)&&day%7===0?' (today)':''}</option>`).join('');
   const rows=all.filter(e=>e.week===sel.value&&e.status==='done').sort((a,b)=>b.score-a.score||b.correct-a.correct||(a.finishedAt||0)-(b.finishedAt||0));const playing=all.filter(e=>e.week===sel.value&&e.status!=='done').length;
@@ -154,9 +180,6 @@ async function pay(){const p=await get('config/payments');$('#ipa').value=p?.ins
 
 // Two-step buttons: the first click arms, the second does it.
 let armed=null;function arm(b,fn){if(armed===b){armed=null;b.disabled=true;fn().catch(e=>msg('Error: '+e.message)).finally(()=>{b.disabled=false});return}if(armed)armed.textContent=armed.dataset.l;b.dataset.l=b.textContent;b.textContent='Sure?';armed=b;setTimeout(()=>{if(armed===b){b.textContent=b.dataset.l;armed=null}},3000)}
-// Levels: level n needs 50 × n × (n − 1) XP (same as the app).
-const xpForLevel=n=>50*n*(n-1);
-const levelOf=xp=>{let l=1;while(xpForLevel(l+1)<=xp)l++;return l};
 async function addTokens(uid,n){const w=await get('wallets/'+uid);if(w)await patch('wallets/'+uid,{tokens:(w.tokens||0)+n,updatedAt:Date.now()});else await create('wallets',uid,{tokens:n,games:0,spent:0,updatedAt:Date.now()})}
 document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]');if(z){$('#zoom img').src=proofs[z.dataset.z];$('#zoom').style.display='flex';return}if(e.target.closest('#zoom')){$('#zoom').style.display='none';return}
   const b=e.target.closest('button');if(!b)return;
@@ -166,7 +189,6 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
   if(a==='bno')arm(b,async()=>{await patch('tokenPurchases/'+id,{status:'rejected'});await load()});
   if(a==='rok')arm(b,async()=>{const r=await get('rewardRequests/'+id);if(r.status!=='pending')throw new Error('already handled');const w=await get('wallets/'+r.uid);if(!w||w.tokens<r.tokens)throw new Error(`Not enough tokens (has ${w?.tokens??0})`);await patch('wallets/'+r.uid,{tokens:w.tokens-r.tokens,spent:(w.spent||0)+r.tokens,updatedAt:Date.now()});await patch('rewardRequests/'+id,{status:'approved'});msg('Approved – email the player to arrange delivery');await load()});
   if(a==='rno')arm(b,async()=>{await patch('rewardRequests/'+id,{status:'rejected'});await load()});
-  if(a==='setlv'){const L=Math.round(+document.getElementById('lv-'+id).value);if(!(L>=1&&L<=500))return msg('Type a level from 1 to 500 first');arm(b,async()=>{const xp=xpForLevel(L);const p=await get('profiles/'+id);if(p)await patch('profiles/'+id,{xp,updatedAt:Date.now()});else await create('profiles',id,{name:(b.dataset.n||'Player').slice(0,20),xp,updatedAt:Date.now()});msg(`${b.dataset.n} is now level ${L}`);await load()})}
   if(a==='give'){const n=Math.round(+document.getElementById('tk-'+id).value);if(!(n>0))return msg('Type how many tokens first');arm(b,async()=>{await addTokens(id,n);msg(`${n} tokens added to ${b.dataset.n}`);await load()})}
   if(a==='reset')arm(b,async()=>{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email:b.dataset.e});msg('Reset email sent to '+b.dataset.e)});
   if(a==='ds')arm(b,async()=>{await del(`leaderboard_${$('#mode').value}/${id}`);await boards()});
@@ -175,39 +197,7 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
 });
 $('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
 
-// ---------- fingerprint lock: a passkey (Touch ID on Mac, Face ID / Touch ID on iPhone, synced by iCloud Keychain) ----------
-// Safari only allows Touch ID / Face ID when the request starts right inside the tap, so the click handlers below call
-// navigator.credentials straight away, with nothing awaited before it.
-const b64u=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
-let unlocked=false, hiddenAt=0, canFinger=null;
-if(window.PublicKeyCredential&&PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable)PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(v=>{canFinger=v;show()},()=>{canFinger=false;show()});else canFinger=false;
-const lockErr=e=>{$('#lockmsg').textContent=e&&e.name==='NotAllowedError'?'Cancelled, timed out or not recognised. Tap the button and try again.':e&&e.name==='InvalidStateError'?'Touch ID / Face ID is already set up here. Tap Unlock.':'Could not use Touch ID / Face ID: '+(e&&e.message||e)};
-$('#unlock').onclick=()=>{
-  $('#lockmsg').textContent='';
-  // Any Kaweera passkey for this site works (also one made on your other Apple device and synced by iCloud).
-  navigator.credentials.get({publicKey:{challenge:rnd(32),rpId:location.hostname,userVerification:'required',timeout:60000}})
-    .then(c=>{store.set('kwPasskey',{id:b64u(c.rawId),email:OWNER,at:Date.now()});unlocked=true;show()})
-    .catch(e=>{lockErr(e);if(!store.get('kwPasskey'))$('#setup').hidden=false});
-};
-$('#setup').onclick=()=>{
-  $('#lockmsg').textContent='';
-  navigator.credentials.create({publicKey:{rp:{name:'Kaweera Manager',id:location.hostname},user:{id:new TextEncoder().encode('kaweera-owner'),name:OWNER,displayName:'Kaweera owner'},challenge:rnd(32),
-    pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'required',requireResidentKey:true},timeout:60000}})
-    .then(c=>{store.set('kwPasskey',{id:b64u(c.rawId),email:OWNER,at:Date.now()});unlocked=true;show()})
-    .catch(lockErr);
-};
-$('#useSynced').onclick=()=>{$('#unlock').hidden=false;$('#unlock').click()};
-// Lock again after 2 minutes in the background.
-document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(unlocked&&hiddenAt&&Date.now()-hiddenAt>120000){unlocked=false;show()}});
-
-function show(){const signedIn=session&&session.email===OWNER;const ok=signedIn&&unlocked;
-  $('#lock').hidden=!(signedIn&&!unlocked);
-  if(signedIn&&!unlocked){const has=!!store.get('kwPasskey');
-    $('#lockText').textContent=has?'Kaweera Manager is locked.':'Set up Touch ID / Face ID once on this device. After that only your fingerprint or face opens the Manager.';
-    $('#setup').hidden=has;$('#unlock').hidden=!has;
-    if(canFinger===false){$('#unlock').disabled=$('#setup').disabled=true;$('#lockmsg').textContent='This device has no Touch ID or Face ID. Open the Manager on your iPhone or Mac.'}}
-  $('#login').hidden=!!signedIn;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
-finishLink().then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
-setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&unlocked&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
-</script></body></html>
+function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
+finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
+setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
+</script><script src="reviews.js" defer></script></body></html>

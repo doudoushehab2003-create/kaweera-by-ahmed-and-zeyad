@@ -1,0 +1,1 @@
+(()=>{let frame;function update(){cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>document.documentElement.style.setProperty('--game-height',(window.visualViewport?.height||innerHeight)+'px'));}window.addEventListener('resize',update);window.visualViewport?.addEventListener('resize',update);update();})();
