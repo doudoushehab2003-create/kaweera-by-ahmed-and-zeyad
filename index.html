@@ -3,24 +3,49 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <!-- viewport-fit=cover: draw under the notch, the fold and the home bar; the app pads with the safe-area insets. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, shrink-to-fit=no" />
     <title>كُوَيْرَة · Kaweera by Sheebo</title>
+    <meta name="description" content="Kaweera: a football quiz in English, Arabic and French. Trivia, XI, Top 10, predictions, live scores and more." />
+    <meta name="theme-color" content="#06210F" />
+    <meta name="color-scheme" content="dark" />
+    <!-- Home-screen web app (Add to Home Screen on iPhone / Android): opens full screen, without the browser bars. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kaweera" />
+    <link rel="apple-touch-icon" href="icons/icon-180.png" />
+    <meta name="format-detection" content="telephone=no" />
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */
       html,
       body {
         height: 100%;
+        background: #06210f;
+        color-scheme: dark;
+        -webkit-text-size-adjust: 100%;
+        overscroll-behavior: none;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
         overflow: hidden;
+        margin: 0;
+        -webkit-tap-highlight-color: transparent;
       }
       /* These styles make the root element full-height */
       #root {
         display: flex;
         height: 100%;
         flex: 1;
+      }
+      /* Foldables (iPhone Duo half open, hinge across the middle): keep the page from being split by the hinge
+         when the browser exposes the segments; the app's own layout stays in one piece. */
+      @media (vertical-viewport-segments: 2) {
+        #root {
+          height: 100%;
+        }
       }
     </style>
   <link rel="icon" href="/kaweera-by-sheebo/favicon.ico"/></head>
@@ -30,6 +55,6 @@
     <noscript> You need to enable JavaScript to run this app. </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
-  <script src="/kaweera-by-sheebo/_expo/static/js/web/index-2129d96664718e898fbb721a3d677fae.js" defer></script>
+  <script src="/kaweera-by-sheebo/_expo/static/js/web/index-82d7d2abb6f50224c52efc57fbb37002.js" defer></script>
 </body>
 </html>
