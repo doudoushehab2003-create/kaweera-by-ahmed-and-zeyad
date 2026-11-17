@@ -64,14 +64,12 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
 <p class="sub" id="who"></p>
 
 <section id="login" class="login" hidden>
-  <label>Username or email<br><input id="user" autocomplete="username" autocapitalize="none" style="width:100%" placeholder="admin"></label>
-  <label>Password<br><input id="pass" type="password" autocomplete="current-password" style="width:100%"></label>
-  <button class="go" id="pwgo">Sign in</button>
-  <button class="lnk" id="forgot">Forgot or never set a password? Email me a link to set one</button>
-  <p class="sub" id="loginmsg" role="status"></p>
-  <div class="or">— or —</div>
-  <button id="passkey" hidden>Sign in with Touch ID / passkey</button>
-  <button id="send">Email me a one-time sign-in link</button>
+  <div style="text-align:center;font-size:56px">👆</div>
+  <h2 style="text-align:center;margin:0">Set up this device</h2>
+  <p class="sub" style="text-align:center">The Manager opens with your fingerprint only. To add a new iPhone or Mac, confirm once by email, then set up your fingerprint. After that, no password or email is needed on that device.</p>
+  <button class="go" id="send">Email me the one-time setup link</button>
+  <p class="sub" id="loginmsg" role="status" style="text-align:center"></p>
+  <button id="passkey" hidden>Sign in with passkey</button>
 </section>
 
 <section id="lock" class="login" hidden>
@@ -80,8 +78,8 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
   <p class="sub" style="text-align:center" id="lockmsg"></p>
   <button class="go" id="unlockBtn" hidden>👆 Unlock with Touch ID / Face ID</button>
   <button class="go" id="setupBtn" hidden>👆 Set up fingerprint on this device</button>
-  <button id="lockLink">Confirm it's you by email (needed to set up a new device)</button>
-  <button class="lnk" id="lockOut">Sign out</button>
+  <button id="lockLink">Email me the one-time setup link</button>
+  <button class="lnk" id="lockOut" hidden>Remove this device</button>
 </section>
 
 <main id="app" hidden>
@@ -155,13 +153,10 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
 
   <section id="settings" hidden>
     <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
-      <b>Manager password</b>
-      <small class="sub" style="margin:0">Sign in with username <b>admin</b> (or your email) and this password.</small>
-      <input id="newpw" type="password" autocomplete="new-password" placeholder="New password (8+ characters)">
-      <button class="go" id="setpw">Save password</button>
+      <b>Fingerprint lock</b>
+      <small class="sub" style="margin:0">Only your fingerprint opens the Manager on this device. Removing it signs this device out; setting it up again needs the email link.</small>
+      <button class="del" id="forgetFinger">Remove this device</button>
       <button id="enroll" hidden>Add a passkey (Touch ID / Face ID)</button>
-      <button class="del" id="forgetFinger">Remove this device's fingerprint lock</button>
-      <small class="sub" style="margin:0">After removing it, opening the Manager on this device needs the email link again to set up a new fingerprint.</small>
     </div>
     <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
       <b>InstaPay and ad prices</b>
@@ -170,7 +165,6 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
       <label>Ad price, 1 month (EGP)<br><input id="mp" type="number" min="1"></label>
       <button class="go" id="savepay">Save</button>
     </div>
-    <button id="out" class="del">Sign out</button>
   </section>
 </main>
 
@@ -180,7 +174,6 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
 
 <script>
 const KEY='AIzaSyDXgdmAfP0lXRxt-vgZxMy1muNPqcCoucc', PROJECT='kora-w-bas', OWNER='ahmedabdelgawad11803@gmail.com';
-const USERNAMES=['admin','owner','ahmedabdelgawad11803'];
 const DB=`projects/${PROJECT}/databases/(default)/documents`;
 const DOCS=`https://firestore.googleapis.com/v1/${DB}`;
 const AUTH='https://identitytoolkit.googleapis.com/v1/accounts';
@@ -212,19 +205,6 @@ async function token(){
 }
 function signOut(){session=null;store.set('kwSession',null);lockNow();show()}
 const startSession=(j,via='password')=>{session={email:j.email,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000,via,at:Date.now()};store.set('kwSession',session);lockNow()};
-function emailFromUser(u){u=u.trim().toLowerCase();if(u.includes('@'))return u;return USERNAMES.includes(u)?OWNER:null}
-$('#pwgo').onclick=async()=>{
-  const email=emailFromUser($('#user').value),pw=$('#pass').value;
-  if(!email||email!==OWNER){$('#loginmsg').textContent='Unknown username. Use admin or the owner email.';return}
-  if(!pw){$('#loginmsg').textContent='Type your password.';return}
-  $('#pwgo').disabled=true;$('#loginmsg').textContent='Signing in…';
-  try{startSession(await post(`${AUTH}:signInWithPassword?key=${KEY}`,{email,password:pw,returnSecureToken:true}));await verifySession();$('#pass').value='';show()}
-  catch(e){$('#loginmsg').textContent=/INVALID|PASSWORD|NOT_FOUND/.test(e.message)?'Wrong username or password. If you never set one, use the link below.':/TOO_MANY/.test(e.message)?'Too many tries. Wait a few minutes or use the email link.':'Could not sign in: '+e.message}
-  finally{$('#pwgo').disabled=false}
-};
-$('#pass').onkeydown=e=>{if(e.key==='Enter')$('#pwgo').click()};
-$('#user').onkeydown=e=>{if(e.key==='Enter')$('#pass').focus()};
-$('#forgot').onclick=async()=>{try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'PASSWORD_RESET',email:OWNER});$('#loginmsg').textContent='Check your email: the link lets you choose a password. Then sign in here with admin and that password.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}};
 $('#send').onclick=async()=>{$('#send').disabled=true;try{await post(`${AUTH}:sendOobCode?key=${KEY}`,{requestType:'EMAIL_SIGNIN',email:OWNER,continueUrl:location.origin+location.pathname});$('#loginmsg').textContent='Link sent. Open your email on this device and tap the link.'}catch(e){$('#loginmsg').textContent='Could not send: '+e.message}$('#send').disabled=false};
 async function finishLink(){
   const p=new URLSearchParams(location.search);if(p.get('mode')!=='signIn'||!p.get('oobCode'))return;
@@ -239,9 +219,7 @@ async function verifySession(){
   if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
   session.email=u.email;store.set('kwSession',session);
 }
-$('#setpw').onclick=async()=>{const pw=$('#newpw').value;if(pw.length<8)return msg('Use at least 8 characters');try{const j=await post(`${AUTH}:update?key=${KEY}`,{idToken:await token(),password:pw,returnSecureToken:true});session={...session,idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};store.set('kwSession',session);$('#newpw').value='';msg('Password saved. Sign in with admin + this password.')}catch(e){msg(/CREDENTIAL_TOO_OLD|REQUIRES_RECENT/.test(e.message)?'For safety, sign out and in again, then set the password.':'Error: '+e.message)}};
-$('#out').onclick=signOut;
-$('#forgetFinger').onclick=()=>{store.set('kwFinger',null);lockNow();msg('Fingerprint removed from this device');signOut()};
+$('#forgetFinger').onclick=()=>arm($('#forgetFinger'),()=>{store.set('kwFinger',null);lockNow();signOut()});
 const pk=window.managerPasskeys||{available:false};
 $('#passkey').hidden=!pk.available;$('#enroll').hidden=!pk.available;
 $('#passkey').onclick=async()=>{$('#passkey').disabled=true;try{const {customToken}=await pk.login();startSession(await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true}),'passkey');await verifySession();show()}catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled.':e.message}finally{$('#passkey').disabled=false}};
@@ -268,11 +246,11 @@ const canEnroll=()=>session?.via==='link'&&Date.now()-(session.at||0)<15*6e4;
 function showLock(){
   const id=credId(),web=hasWebAuthn();
   $('#unlockBtn').hidden=!id||!web;$('#setupBtn').hidden=!!id||!web||!canEnroll();
-  $('#lockLink').hidden=!!id&&web;
+  $('#lockLink').hidden=!!id&&web||canEnroll();
   $('#lockmsg').textContent=!web?'This browser can’t use Touch ID / Face ID. Open the Manager in Safari or Chrome on your iPhone or Mac.'
-    :id?'Signed in. Touch the sensor (or look at the phone) to open the Manager.'
-    :canEnroll()?'Email confirmed. Now set up your fingerprint on this device. Next time only your password and fingerprint are needed.'
-    :'This device has no fingerprint set up yet. For safety, confirm it’s you with the email link first, then set it up.';
+    :id?'Touch the sensor (or look at your phone) to open the Manager.'
+    :canEnroll()?'Email confirmed. Now set up your fingerprint. From then on, only your fingerprint opens the Manager on this device.'
+    :'No fingerprint is set up on this device yet. Confirm by email once, then set it up.';
 }
 // Safari only shows the Touch ID sheet if navigator.credentials is called straight from the tap.
 $('#unlockBtn').onclick=()=>{
@@ -553,6 +531,6 @@ let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(players,150)};
 for(const [sel,v] of [['#buysF','buys'],['#rewardsF','rewards'],['#reviewsF','reviews'],['#reportsF','reports'],['#playersF','players'],['#mode','boards']])$(sel).onchange=()=>VIEWS[v]().catch(e=>msg('Error: '+e.message));
 $('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));
 
-function show(){const ok=session&&session.email===OWNER;const open=ok&&isUnlocked();$('#login').hidden=!!ok;$('#lock').hidden=!ok||open;$('#app').hidden=!open;if(ok&&!open){showLock();return}$('#who').textContent=ok?'Signed in as admin · lists refresh every 30 s while open':'Owner only.';if(ok){const t=location.hash==='#new'?'players':store.get('kwTab')||'today';if(location.hash==='#new')$('#playersF').value='new';go(VIEWS[t]?t:'today')}else{$('#user').value=store.get('kwUser')||'admin';$('#pass').focus()}}
+function show(){const ok=session&&session.email===OWNER;const open=ok&&isUnlocked();$('#login').hidden=!!ok;$('#lock').hidden=!ok||open;$('#app').hidden=!open;if(ok&&!open){showLock();return}$('#who').textContent=ok?'Unlocked with your fingerprint · lists refresh every 30 s while open':'Owner only.';if(ok){const t=location.hash==='#new'?'players':store.get('kwTab')||'today';if(location.hash==='#new')$('#playersF').value='new';go(VIEWS[t]?t:'today')}}
 finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show);
 </script></body></html>
