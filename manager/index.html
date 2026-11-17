@@ -2,6 +2,12 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Kaweera Manager</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-180.png">
+<meta name="theme-color" content="#06150c">
+<meta name="apple-mobile-web-app-title" content="KAWEERA Manager">
+<script src="./passkey-config.js"></script>
+<script src="./passkeys.js"></script>
 <style>
 [hidden]{display:none!important}
 :root{--bg:#06150c;--card:#0d2616;--line:#1d4a2c;--fg:#f1f6ec;--mut:#8fb09a;--neon:#2bff88;--gold:#ffc83d;--red:#ff5a5f;--ink:#04200f}
@@ -31,7 +37,9 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
 <p class="sub" id="who"></p>
 
 <section id="login" class="login" hidden>
-  <p>Sign in with the owner email. We send a sign-in link to your inbox.</p>
+  <button class="go" id="passkey" hidden>Sign in with Touch ID / passkey</button>
+  <p id="passkeynote">Passkeys require server setup. Owner email sign-in remains available.</p>
+  <p>Sign in with the owner email to enroll a passkey or recover access.</p>
   <input id="email" type="email" autocomplete="email" value="ahmedabdelgawad11803@gmail.com">
   <button class="go" id="send">Email me a sign-in link</button>
   <p class="sub" id="loginmsg"></p>
@@ -48,6 +56,7 @@ th{color:var(--mut);font-weight:600;font-size:13px}tr:last-child td{border-botto
     <button data-t="boards">Leaderboards</button>
     <button data-t="ads">📣 Ads</button>
     <button data-t="pay">💳 InstaPay</button>
+    <button id="enroll" hidden>Add a passkey</button>
     <button id="out" style="margin-left:auto">Sign out</button>
   </div>
   <section id="buys"><p class="sub">New payment requests appear here by themselves. Check the screenshot and your InstaPay, then approve to add the tokens.</p><div class="wrap"><table><thead><tr><th>When</th><th>Player</th><th>Screenshot</th><th>Reference</th><th>Paid</th><th>Tokens</th><th>Status</th><th></th></tr></thead><tbody id="bb"></tbody></table></div></section>
@@ -98,6 +107,32 @@ async function finishLink(){
   history.replaceState(null,'',location.pathname+location.hash);
 }
 $('#out').onclick=signOut;
+async function verifySession(){
+  if(!session)return;
+  const j=await post(`${AUTH}:lookup?key=${KEY}`,{idToken:await token()});
+  const u=j.users?.[0];
+  if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
+  session.email=u.email;store.set('kwSession',session);
+}
+$('#passkey').hidden=!managerPasskeys.available;
+$('#enroll').hidden=!managerPasskeys.available;
+if(managerPasskeys.available)$('#passkeynote').textContent='Use an enrolled passkey. Your Mac may offer Touch ID or its device password. Sign-in is remembered on this browser or Dock app until you sign out or the session expires.';
+$('#passkey').onclick=async()=>{
+  $('#passkey').disabled=true;
+  try{
+    const {customToken}=await managerPasskeys.login();
+    const j=await post(`${AUTH}:signInWithCustomToken?key=${KEY}`,{token:customToken,returnSecureToken:true});
+    session={idToken:j.idToken,refreshToken:j.refreshToken,exp:Date.now()+Number(j.expiresIn)*1000};
+    await verifySession();show();
+  }catch(e){$('#loginmsg').textContent=e.name==='NotAllowedError'?'Passkey cancelled or unavailable. Try again or use email.':e.message}
+  finally{$('#passkey').disabled=false}
+};
+$('#enroll').onclick=async()=>{
+  $('#enroll').disabled=true;
+  try{await managerPasskeys.register(await token());msg('Passkey saved. You can now sign in with it from the Dock app.')}
+  catch(e){msg(e.name==='NotAllowedError'?'Passkey setup cancelled.':e.message+' Use a new owner email link within 5 minutes.')}
+  finally{$('#enroll').disabled=false}
+};
 
 // ---------- Firestore ----------
 const enc=v=>typeof v==='string'?{stringValue:v}:Number.isInteger(v)?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{doubleValue:v};
@@ -163,6 +198,6 @@ document.addEventListener('click',async e=>{const z=e.target.closest('[data-z]')
 $('#q').oninput=render;$('#wk').onchange=()=>weekly().catch(e=>msg('Error: '+e.message));$('#mode').onchange=()=>boards().catch(e=>msg('Error: '+e.message));
 
 function show(){const ok=session&&session.email===OWNER;$('#login').hidden=!!ok;$('#app').hidden=!ok;$('#who').textContent=ok?'Signed in as '+session.email+' · updates every 30 seconds':'Only the owner can open this page.';if(ok)load().catch(e=>msg(e.message==='signed-out'?'Please sign in again':'Error: '+e.message))}
-finishLink().then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
+finishLink().then(verifySession).catch(e=>{$('#loginmsg').textContent='Please sign in again. '+e.message;session=null;store.set('kwSession',null)}).then(show).then(()=>{if(location.hash==='#new')document.querySelector('[data-new]').click()});
 setInterval(()=>{if([...document.querySelectorAll('[id^=tk-]')].some(i=>i.value)||armed)return;if(session&&!document.hidden&&['buys','rewards','players'].includes(D.tab))load().catch(()=>{})},30000);
 </script></body></html>

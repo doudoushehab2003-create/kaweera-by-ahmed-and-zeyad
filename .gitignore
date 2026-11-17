@@ -1,0 +1,3 @@
+passkey-backend/node_modules/
+passkey-backend/.env*
+firebase-debug.log
