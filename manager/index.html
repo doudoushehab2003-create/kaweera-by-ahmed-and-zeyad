@@ -159,6 +159,12 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
       <button id="enroll" hidden>Add a passkey (Touch ID / Face ID)</button>
     </div>
     <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
+      <b>🔔 New player notifications</b>
+      <small class="sub" style="margin:0" id="opMsg">Get a notification on this device whenever someone signs up (checked every 15 minutes). On iPhone, add the Manager to your Home Screen first.</small>
+      <button class="go" id="opOn">Notify me of new players</button>
+      <button class="del" id="opOff" hidden>Stop on this device</button>
+    </div>
+    <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
       <b>InstaPay and ad prices</b>
       <label>InstaPay address or link<br><input id="ipa" style="width:100%"></label>
       <label>Ad price, 1 week (EGP)<br><input id="wp" type="number" min="1"></label>
@@ -219,6 +225,27 @@ async function verifySession(){
   if(!u||u.email!==OWNER||!u.emailVerified){signOut();throw new Error('Owner verification required')}
   session.email=u.email;store.set('kwSession',session);
 }
+// ---------- owner notifications (new sign-ups) ----------
+const VAPID='BM_tKzcUSi77nLqPPAFvFi6FvpCV7FYukgfTEBUP8j0unYMa6m_JJe8zKQoE3ftSfq5Wo-w9QvbQzsaobMdKwjQ';
+const vapidKey=b=>Uint8Array.from(atob((b+'='.repeat((4-b.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+const opDevice=()=>{let d=store.get('kwOpDevice');if(!d){d='m'+Math.random().toString(36).slice(2,12);store.set('kwOpDevice',d)}return d};
+async function opState(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){$('#opMsg').textContent='This browser can’t show notifications. On iPhone, add the Manager to your Home Screen (Share → Add to Home Screen) and open it from there.';$('#opOn').hidden=true;return}
+  const reg=await navigator.serviceWorker.getRegistration('./');const sub=await reg?.pushManager.getSubscription();
+  const on=!!sub&&Notification.permission==='granted'&&store.get('kwOpOn');$('#opOn').hidden=on;$('#opOff').hidden=!on;
+  if(on)$('#opMsg').textContent='On: this device gets a notification for every new sign-up.';
+  if(Notification.permission==='denied')$('#opMsg').textContent='Notifications are blocked for this site. Allow them in the browser settings, then try again.';
+}
+// Called straight from the tap: Safari only asks for permission inside a user gesture.
+$('#opOn').onclick=()=>{const ask=Notification.requestPermission();$('#opOn').disabled=true;ask.then(async p=>{
+  if(p!=='granted')throw new Error('Permission not given');
+  const reg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});await navigator.serviceWorker.ready;
+  const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidKey(VAPID)});
+  await patch(`ownerPush/${opDevice()}`,{sub:JSON.stringify(sub),device:navigator.userAgent.slice(0,120),updatedAt:Date.now()});
+  store.set('kwOpOn',true);msg('Notifications on 🔔');
+}).catch(e=>msg('Could not turn on: '+e.message)).finally(()=>{$('#opOn').disabled=false;opState()})};
+$('#opOff').onclick=async()=>{try{await fs(`/ownerPush/${opDevice()}`,{method:'DELETE'});const reg=await navigator.serviceWorker.getRegistration('./');await (await reg?.pushManager.getSubscription())?.unsubscribe();store.set('kwOpOn',null);msg('Notifications off on this device')}catch(e){msg('Error: '+e.message)}opState()};
+opState().catch(()=>{});
 $('#forgetFinger').onclick=()=>arm($('#forgetFinger'),()=>{store.set('kwFinger',null);lockNow();signOut()});
 const pk=window.managerPasskeys||{available:false};
 $('#passkey').hidden=!pk.available;$('#enroll').hidden=!pk.available;
@@ -386,7 +413,7 @@ async function givePass(tx,uid,days){const p=await get('passes/'+uid);const unti
 const approveReward=(tx,id)=>get('rewardRequests/'+id).then(async r=>{if(r?.status!=='pending')throw new Error('already handled');const w=await get('wallets/'+r.uid);if(!w||w.tokens<r.tokens)throw new Error(`${r.name}: not enough tokens (has ${w?.tokens??0})`);await tx.patch('wallets/'+r.uid,{tokens:w.tokens-r.tokens,spent:(w.spent||0)+r.tokens,updatedAt:Date.now()});await tx.patch('rewardRequests/'+id,{status:'approved'});if(r.item==='pass')await givePass(tx,r.uid,30);return r});
 
 // ---------- REVIEWS ----------
-async function flaggedUids(){const open=await query('reports',[['status','==','open']],500);const ids=new Set(open.filter(r=>r.kind==='auto').map(r=>r.uid));const names=new Set(open.filter(r=>r.kind==='player').map(r=>(r.username||'').trim().toLowerCase()));return{ids,names}}
+async function flaggedUids(){const open=await query('reports',[['status','==','open']],500);const ids=new Set(open.filter(r=>r.kind==='auto').map(r=>r.uid));const names=new Set(open.filter(r=>r.kind==='player'||r.kind==='spam'||r.kind==='abuse').map(r=>(r.username||'').trim().toLowerCase()));return{ids,names}}
 /** Confirms results older than 24 h unless the player is reported or flagged. */
 async function autoConfirm(quiet){const old=(await query('submissions',[['status','==','pending']],500)).filter(x=>(x.createdAt||0)<Date.now()-DAY);if(!old.length){if(!quiet)msg('Nothing older than 24 hours to confirm');return 0}
   const f=await flaggedUids();const ok=old.filter(x=>!f.ids.has(x.uid)&&!f.names.has((x.name||'').toLowerCase()));const held=old.length-ok.length;
@@ -406,7 +433,7 @@ async function reports(){const f=$('#reportsF').value;const rows=(await cached('
   const rep=Object.values(tally).filter(t=>t.n>=2).sort((a,b)=>b.n-a.n);
   $('#offenders').innerHTML=rep.length?`<div class="card"><b>⚠️ Repeat offenders (60 days)</b><div class="row" style="margin-top:6px">${rep.map(t=>t.uid?`<button class="sm warn" data-player="${esc(t.uid)}">${esc(t.label)} · ${t.n}${t.auto?` (🤖${t.auto})`:''}</button>`:`<span class="pill warned">${esc(t.label)} · ${t.n}</span>`).join('')}</div></div>`:'';
   const modBtns=r=>r.about?`<button class="sm warn" data-a="warn" data-u="${esc(r.about)}" data-i="${esc(r.id)}">Warn</button><button class="sm del" data-a="ban" data-u="${esc(r.about)}" data-i="${esc(r.id)}">Ban</button><button class="sm" data-a="unseason" data-u="${esc(r.about)}">Remove results</button>`:'<small class="sub">player not found</small>';
-  $('#cheatT').innerHTML=table([['When',r=>ago(r.createdAt)],['Type',r=>r.kind==='auto'?'🤖 Auto flag':'🚨 Cheating'],['About',r=>r.about?who(r.about,users[r.about]?.name||r.username):`<b>${esc(r.username)}</b>`],['From',r=>r.kind==='auto'?'<small class="sub">system</small>':who(r.uid,r.name)],['Reason',r=>`${esc(r.reason)}<br><small class="sub">${esc(r.context)}</small>`,'wide'],['Status',r=>pill(r.status)],['',r=>(r.status==='open'?modBtns(r)+`<button class="sm go" data-a="repok" data-i="${esc(r.id)}">Handled</button>`:'')+`<button class="sm del" data-a="repdel" data-i="${esc(r.id)}">Delete</button>`,'act']],cheat,'No cheating reports. 👍',{sel:'reports',flag:r=>r.kind==='auto'});
+  $('#cheatT').innerHTML=table([['When',r=>ago(r.createdAt)],['Type',r=>({auto:'🤖 Auto flag',spam:'📢 Spam account',abuse:'🤬 Offensive'}[r.kind]||'🚨 Cheating')],['About',r=>r.about?who(r.about,users[r.about]?.name||r.username):`<b>${esc(r.username)}</b>`],['From',r=>r.kind==='auto'?'<small class="sub">system</small>':who(r.uid,r.name)],['Reason',r=>`${esc(r.reason)}<br><small class="sub">${esc(r.context)}</small>`,'wide'],['Status',r=>pill(r.status)],['',r=>(r.status==='open'?modBtns(r)+`<button class="sm go" data-a="repok" data-i="${esc(r.id)}">Handled</button>`:'')+`<button class="sm del" data-a="repdel" data-i="${esc(r.id)}">Delete</button>`,'act']],cheat,'No cheating reports. 👍',{sel:'reports',flag:r=>r.kind==='auto'});
   // Wrong answers grouped by question.
   const groups={};for(const r of rows.filter(r=>r.kind==='answer')){const parts=(r.context||'').split(' · ');const aid=parts[0]||'?';const qid=aid.split(':').pop();(groups[qid]=groups[qid]||{qid,aid,text:parts[1]||'',your:parts[2]||'',right:parts[3]||'',list:[]}).list.push(r)}
   const gs=Object.values(groups).sort((a,b)=>b.list.length-a.list.length);const fixes=await cached('fixes',6e4,()=>query('questionFixes',[],1000));const fx=Object.fromEntries(fixes.map(f=>[f.id,f]));
@@ -445,7 +472,7 @@ async function openPlayer(uid){
    <h3>Payments</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Paid',r=>`${r.egp} EGP → ${r.tokens}`],['Ref',r=>esc(r.ref)],['Status',r=>pill(r.status)]],sort(buys),'None.')}</div>
    <h3>Rewards</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Reward',r=>RW[r.item]||esc(r.item)],['Tokens',r=>r.tokens],['Status',r=>pill(r.status)]],sort(rews),'None.')}</div>
    <h3>Results</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Game',r=>esc(r.mode)],['Points',r=>r.points],['Status',r=>pill(r.status)]],sort(subs).slice(0,30),'None.')}</div>
-   <h3>Reports about them</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Type',r=>r.kind==='auto'?'🤖':'🚨'],['Reason',r=>esc(r.reason),'wide'],['Status',r=>pill(r.status)]],sort(aboutThem),'None. 👍')}</div>
+   <h3>Reports about them</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Type',r=>({auto:'🤖',spam:'📢',abuse:'🤬'}[r.kind]||'🚨')],['Reason',r=>esc(r.reason),'wide'],['Status',r=>pill(r.status)]],sort(aboutThem),'None. 👍')}</div>
    <h3>Reports they sent</h3><div class="wrap">${table([['When',r=>when(r.createdAt)],['Type',r=>esc(r.kind)],['Reason',r=>esc(r.reason),'wide'],['Status',r=>pill(r.status)]],sort(byThem.filter(r=>r.kind!=='auto')),'None.')}</div>`;
 }
 
