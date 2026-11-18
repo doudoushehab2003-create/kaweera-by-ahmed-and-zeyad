@@ -141,6 +141,9 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
   </section>
 
   <section id="boards" hidden>
+    <h3>🏆 Kaweera Cup · this week</h3><div class="wrap" id="cupT"></div>
+    <h3>🎁 Prize race</h3><p class="sub">Weekly #1 of Seasons (confirmed points, Cup champion guaranteed top 3). Three weeks in a row = Egyptian Premier League ticket. #1 of the year = Champions League R16/QF ticket.</p><div class="wrap" id="prizeT"></div>
+    <h3>Mode leaderboards</h3>
     <div class="bar"><select id="mode"><option>mixed</option><option>easy</option><option>medium</option><option>hard</option><option>daily</option></select></div><div class="wrap" id="boardsT"></div>
   </section>
 
@@ -167,6 +170,8 @@ td.wide{min-width:180px;white-space:normal}tr.sel{background:rgba(43,255,136,.08
     <div class="card" style="max-width:520px;display:flex;flex-direction:column;gap:10px">
       <b>InstaPay and ad prices</b>
       <label>InstaPay address or link<br><input id="ipa" style="width:100%"></label>
+      <label>Card / Apple Pay payment link (optional)<br><input id="cardl" style="width:100%" placeholder="https://… from Paymob, Kashier or Fawry"></label>
+      <small class="sub" style="margin:0">Players paying by Visa, Mastercard or Apple Pay open this link, pay the amount, then send the order number and receipt here like InstaPay. Leave empty to show "coming soon".</small>
       <label>Ad price, 1 week (EGP)<br><input id="wp" type="number" min="1"></label>
       <label>Ad price, 1 month (EGP)<br><input id="mp" type="number" min="1"></label>
       <button class="go" id="savepay">Save</button>
@@ -482,13 +487,23 @@ async function weekly(){sponsor().catch(()=>{});const day=cairoDay(),thu=day-day
   const all=await cached('weekly:'+sel.value,6e4,()=>query('weeklyEntries',[['week','==',sel.value]],1000));await loadUsers(all.map(e=>e.uid));
   const rows=all.filter(e=>e.status==='done').sort((a,b)=>b.score-a.score||b.correct-a.correct||(a.finishedAt||0)-(b.finishedAt||0));const playing=all.length-rows.length;
   $('#weeklyT').innerHTML=table([['#',(e)=>rows.indexOf(e)===0?'🥇 Winner':rows.indexOf(e)+1],['Player',e=>who(e.uid,e.name)],['Score',e=>`<b>${e.score}</b>`],['Correct',e=>e.correct],['Finished',e=>when(e.finishedAt)]],rows,'No one has finished this contest.')+(playing?`<p class="sub" style="padding:8px 12px">${playing} started but didn't finish.</p>`:'')}
-async function boards(){const m=$('#mode').value;const rows=await cached('boards:'+m,6e4,async()=>{const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'leaderboard_'+m}],orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}],limit:200}})});return r.filter(x=>x.document).map(x=>docOf(x.document))});
+const cupWeekOf=(t=Date.now())=>Math.floor((cairoDay(t)+3)/7), cupStart=w=>(w*7-3)*DAY-72e5;
+async function cupTopM(w,n){const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'cup'+w}],orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}],limit:n}})});return r.filter(x=>x.document).map(x=>docOf(x.document))}
+function sumPts(rows,from,to){const by={};for(const r of rows){if(r.createdAt<from||r.createdAt>=to)continue;(by[r.uid]=by[r.uid]||{uid:r.uid,name:r.name,points:0}).points+=r.points||0}return Object.values(by).sort((a,b)=>b.points-a.points)}
+function podium(list,ch){if(!ch)return list;const i=list.findIndex(s=>s.uid===ch.uid);if(i>=0&&i<3)return list;const me=i>=0?list.splice(i,1)[0]:{uid:ch.uid,name:ch.name,points:0};list.splice(Math.min(2,list.length),0,{...me,cup:true});return list}
+async function cupAndPrizes(){const w=cupWeekOf();const [cup,subs]=await cached('cupPrizes',6e4,()=>Promise.all([cupTopM(w,20),query('submissions',[['status','==','reviewed']],3000)]));
+  $('#cupT').innerHTML=table([['#',s=>cup.indexOf(s)+1],['Player',s=>who(s.uid,s.name)],['Score',s=>s.score],['Lives',s=>s.lives>0?'❤️'.repeat(Math.min(3,s.lives)):'💀'],['Refills',s=>s.refills],['Answered',s=>s.answered]],cup,'No Cup entries yet this week.');
+  const weeks=[];for(let k=w-8;k<=w;k++){const ch=(await cupTopM(k,1).catch(()=>[]))[0];const st=podium(sumPts(subs,cupStart(k),cupStart(k+1)),ch&&ch.score>0?{uid:ch.uid,name:ch.name}:null);weeks.push({week:k,first:st[0],cup:ch&&ch.score>0?ch.name:'',live:k===w})}
+  let run=0;const done=weeks.filter(x=>!x.live);const last=done[done.length-1]?.first?.uid;for(let i=done.length-1;i>=0&&last&&done[i].first?.uid===last;i--)run++;
+  const y=new Date(Date.now()+72e5).getUTCFullYear();const year=sumPts(subs,Date.UTC(y,0,1)-72e5,Date.UTC(y+1,0,1)-72e5);
+  $('#prizeT').innerHTML=`<p><b>🎟️ Current run:</b> ${last?esc(done[done.length-1].first.name)+' · '+run+'/3 weeks'+(run>=3?' → <b style="color:var(--accent,#2bd96b)">EPL ticket earned</b>':''):'–'} &nbsp; <b>⭐ Year leader:</b> ${year[0]?esc(year[0].name)+' · '+year[0].points+' pts':'–'}</p>`+table([['Week from',x=>new Date(cupStart(x.week)+72e5).toISOString().slice(0,10)+(x.live?' (now)':'')],['#1',x=>x.first?who(x.first.uid,x.first.name)+(x.first.cup?' 🏆':''):'–'],['Points',x=>x.first?.points??0],['Cup champion',x=>esc(x.cup)||'–']],weeks.slice().reverse(),'');}
+async function boards(){cupAndPrizes().catch(e=>{$('#cupT').textContent='Error: '+e.message});const m=$('#mode').value;const rows=await cached('boards:'+m,6e4,async()=>{const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'leaderboard_'+m}],orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}],limit:200}})});return r.filter(x=>x.document).map(x=>docOf(x.document))});
   $('#boardsT').innerHTML=table([['#',s=>rows.indexOf(s)+1],['Name',s=>esc(s.name)],['Score',s=>s.score],['Correct',s=>s.correct],['When',s=>when(s.date)],['',s=>`<button class="sm del" data-a="ds" data-i="${esc(s.id)}">Remove</button>`,'act']],rows,'No scores yet.')}
 async function ads(){const [a,c]=await cached('ads',6e4,()=>Promise.all([query('ads',[],500),query('adContacts',[],500)]));const cm=Object.fromEntries(c.map(x=>[x.id,x]));const o={pending:0,approved:1};a.sort((x,y)=>(o[x.status]??9)-(o[y.status]??9)||(y.createdAt||0)-(x.createdAt||0));
   $('#adsT').innerHTML=table([['When',x=>ago(x.createdAt)],['Business',x=>esc(x.business)],['Text',x=>esc(x.text),'wide'],['Package',x=>esc(x.package)],['Reference',x=>`<b>${esc(cm[x.id]?.payRef||'—')}</b>`],['Contact',x=>esc(cm[x.id]?.contact||'')],['Status',x=>pill(x.status)],['',x=>x.status==='pending'?`<button class="sm go" data-a="adok" data-i="${esc(x.id)}">Paid – approve</button><button class="sm del" data-a="adno" data-i="${esc(x.id)}">Reject</button>`:x.status==='approved'?`<button class="sm" data-a="adend" data-i="${esc(x.id)}">End ad</button>`:'','act']],a,'No ads yet.')}
 async function log(){const rows=await cached('log',3e4,async()=>{const r=await fs(':runQuery',{method:'POST',body:JSON.stringify({structuredQuery:{from:[{collectionId:'adminLog'}],orderBy:[{field:{fieldPath:'at'},direction:'DESCENDING'}],limit:200}})});return r.filter(x=>x.document).map(x=>docOf(x.document))});
   $('#logT').innerHTML=table([['When',e=>when(e.at)],['What',e=>esc(e.label),'wide'],['',e=>e.undone?pill('ended','undone'):`<button class="sm" data-undo="${esc(e.id)}">Undo</button>`,'act']],rows,'Nothing yet.')}
-async function settings(){const p=await get('config/payments');$('#ipa').value=p?.instapay||'';$('#wp').value=p?.weekPrice||'';$('#mp').value=p?.monthPrice||''}
+async function settings(){const p=await get('config/payments');$('#ipa').value=p?.instapay||'';$('#cardl').value=p?.cardLink||'';$('#wp').value=p?.weekPrice||'';$('#mp').value=p?.monthPrice||''}
 
 // ---------- navigation + refresh ----------
 let D={tab:'today'};
@@ -551,7 +566,7 @@ document.addEventListener('click',async e=>{
   if(a==='adok'||a==='adno'||a==='adend')arm(b,()=>act(`Ad ${{adok:'approved',adno:'rejected',adend:'ended'}[a]}`,tx=>tx.patch('ads/'+id,{status:{adok:'approved',adno:'rejected',adend:'ended'}[a]})).then(()=>reload('ads')));
   if(b.id==='spclear'){D.logo='';$('#spi').hidden=true;return}
   if(b.id==='spsave'){const name=$('#spn').value.trim().slice(0,40),url=$('#spu').value.trim();if(url&&!/^https:\/\//.test(url))return msg('The link must start with https://');const data={name,url,logo:D.logo||'',updatedAt:Date.now()};act('Saved prize sponsor',async tx=>{const p=await get('config/weeklySponsor');if(p)await tx.patch('config/weeklySponsor',data);else await tx.create('config','weeklySponsor',data)}).catch(er=>msg('Error: '+er.message))}
-  if(b.id==='savepay'){const instapay=$('#ipa').value.trim(),weekPrice=+$('#wp').value,monthPrice=+$('#mp').value;if(!instapay||!(weekPrice>0)||!(monthPrice>0))return msg('Fill in all three');act('Saved InstaPay and prices',tx=>tx.patch('config/payments',{instapay,weekPrice:Math.round(weekPrice),monthPrice:Math.round(monthPrice),updatedAt:Date.now()})).catch(er=>msg('Error: '+er.message))}
+  if(b.id==='savepay'){const instapay=$('#ipa').value.trim(),cardLink=$('#cardl').value.trim(),weekPrice=+$('#wp').value,monthPrice=+$('#mp').value;if(!instapay||!(weekPrice>0)||!(monthPrice>0))return msg('Fill in InstaPay and both prices');if(cardLink&&!/^https:\/\//.test(cardLink))return msg('The card link must start with https://');act('Saved InstaPay and prices',tx=>tx.patch('config/payments',{instapay,cardLink,weekPrice:Math.round(weekPrice),monthPrice:Math.round(monthPrice),updatedAt:Date.now()})).catch(er=>msg('Error: '+er.message))}
 });
 $('#spl').onchange=e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{const k=Math.min(1,400/img.width,120/img.height);const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);D.logo=c.toDataURL('image/png');$('#spi').src=D.logo;$('#spi').hidden=false;URL.revokeObjectURL(img.src)};img.src=URL.createObjectURL(f)};
 let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(players,150)};
