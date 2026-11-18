@@ -1,6 +1,6 @@
 html,body,#root{height:100%;min-height:0}body{overscroll-behavior:none}
-[data-testid="fit-game"]{height:var(--game-height,100dvh)!important;padding:6px max(8px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom))!important;overflow:hidden!important}
-[data-testid="game-content"]{height:100%;max-width:980px!important;width:100%;gap:6px!important;min-height:0}
+[data-testid="fit-game"]{height:var(--game-height,100dvh)!important;padding:6px max(8px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom))!important;overflow-x:hidden!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+[data-testid="game-content"]{min-height:100%;height:auto;max-width:980px!important;width:100%;gap:6px!important;min-height:0}
 [data-testid="game-content"]>[data-testid="question-view"]{min-height:0;flex:1;gap:6px!important}
 [data-testid="question-options"]{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}
 [data-testid="question-options"] [role="button"]{padding:6px!important;min-height:44px}
