@@ -56,5 +56,48 @@
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
   <script src="/kaweera-by-sheebo/_expo/static/js/web/index-955a7e4fecc896451e5d7935f026bf7c.js" defer></script>
+  <script>
+    // Keep Instagram beside the existing TikTok social link on the home screen.
+    (function () {
+      var instagramUrl = "https://www.instagram.com/kaweeraaa/";
+      function addInstagram() {
+        var links = document.querySelectorAll('a[href], [role="link"][aria-label]');
+        for (var i = 0; i < links.length; i++) {
+          var tiktok = links[i];
+          var identifyingText = [
+            tiktok.getAttribute("href") || "",
+            tiktok.getAttribute("aria-label") || "",
+            tiktok.getAttribute("title") || "",
+            tiktok.textContent || ""
+          ].join(" ").toLowerCase();
+          if (identifyingText.indexOf("tiktok") === -1 || tiktok.dataset.kaweeraInstagram === "true") continue;
+          if (!tiktok.parentNode || tiktok.parentNode.querySelector('[data-kaweera-instagram="true"]')) continue;
+          var instagram = tiktok.cloneNode(true);
+          instagram.dataset.kaweeraInstagram = "true";
+          instagram.href = instagramUrl;
+          instagram.setAttribute("aria-label", "Kaweera on Instagram");
+          instagram.setAttribute("title", "Follow Kaweera on Instagram");
+          instagram.setAttribute("target", "_blank");
+          instagram.setAttribute("rel", "noopener noreferrer");
+          instagram.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';
+          // Preserve a visible label when the TikTok link includes one.
+          if ((tiktok.textContent || "").trim().toLowerCase().indexOf("tiktok") !== -1) {
+            var label = document.createElement("span");
+            label.textContent = "Instagram";
+            instagram.appendChild(label);
+          }
+          tiktok.insertAdjacentElement("afterend", instagram);
+        }
+      }
+      var pending = false;
+      new MutationObserver(function () {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(function () { pending = false; addInstagram(); });
+      }).observe(document.documentElement, { childList: true, subtree: true });
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addInstagram);
+      else addInstagram();
+    })();
+  </script>
 </body>
 </html>
