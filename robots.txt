@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://doudoushehab2003-create.github.io/kaweera-by-sheebo/sitemap.xml
